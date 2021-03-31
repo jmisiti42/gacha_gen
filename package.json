@@ -1,0 +1,81 @@
+{
+  "name": "gacha_gen",
+  "version": "0.0.1",
+  "description": "Gacha Generator",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=10.16"
+  },
+  "scripts": {
+    "build": "lb-tsc",
+    "build:watch": "lb-tsc --watch",
+    "lint": "npm run eslint:fix && npm run eslint && npm run prettier:fix && npm run prettier:check",
+    "lint:fix": "npm run eslint:fix && npm run prettier:fix",
+    "prettier:cli": "lb-prettier \"**/*.ts\" \"**/*.js\"",
+    "prettier:check": "npm run prettier:cli -- -l",
+    "prettier:fix": "npm run prettier:cli -- --write",
+    "eslint": "lb-eslint --report-unused-disable-directives .",
+    "eslint:fix": "npm run eslint -- --fix",
+    "pretest": "npm run rebuild",
+    "test": "lb-mocha --allow-console-logs \"dist/__tests__\"",
+    "posttest": "npm run lint",
+    "test:dev": "lb-mocha --allow-console-logs dist/__tests__/**/*.js && npm run posttest",
+    "docker:build": "docker build -t gacha_gen .",
+    "docker:run": "docker run -p 3000:3000 -d gacha_gen",
+    "premigrate": "npm run build",
+    "migrate": "node ./dist/migrate",
+    "preopenapi-spec": "npm run build",
+    "openapi-spec": "node ./dist/openapi-spec",
+    "prestart": "npm run rebuild",
+    "start": "node --trace-warnings -r source-map-support/register .",
+    "dev": "concurrently \"lb-tsc -w\" \"nodemon --trace-warnings -r source-map-support/register .\"",
+    "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
+    "rebuild": "npm run clean && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "jmisiti <jmisiti42@gmail.com>",
+  "license": "",
+  "files": [
+    "README.md",
+    "dist",
+    "src",
+    "!*/__tests__"
+  ],
+  "dependencies": {
+    "@loopback/authentication": "^7.1.0",
+    "@loopback/authentication-jwt": "^0.8.0",
+    "@loopback/authorization": "^0.8.0",
+    "@loopback/boot": "^3.3.0",
+    "@loopback/core": "^2.15.0",
+    "@loopback/repository": "^3.5.0",
+    "@loopback/rest": "^9.2.0",
+    "@loopback/rest-explorer": "^3.2.0",
+    "@loopback/service-proxy": "^3.1.0",
+    "bcryptjs": "^2.4.3",
+    "isemail": "^3.2.0",
+    "lodash": "^4.17.21",
+    "loopback-connector-mongodb": "^6.0.0",
+    "nodemailer": "^6.5.0",
+    "tslib": "^2.0.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@loopback/build": "^6.3.0",
+    "@loopback/eslint-config": "^10.1.0",
+    "@loopback/testlab": "^3.3.0",
+    "@types/bcryptjs": "^2.4.2",
+    "@types/lodash": "^4.14.168",
+    "@types/node": "^10.17.55",
+    "@types/nodemailer": "^6.4.1",
+    "@types/uuid": "^8.3.0",
+    "concurrently": "^6.0.0",
+    "eslint": "^7.22.0",
+    "nodemon": "^2.0.7",
+    "source-map-support": "^0.5.19",
+    "typescript": "~4.2.3"
+  }
+}
