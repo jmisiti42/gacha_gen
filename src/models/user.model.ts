@@ -1,5 +1,5 @@
 import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
-import {Inventory} from './inventory.model';
+import {InventorySlot} from './inventory-slot.model';
 import {UserCredentials} from './user-credentials.model';
 
 @model({
@@ -36,8 +36,8 @@ export class User extends Entity {
   })
   email: string;
 
-  @hasMany(() => Inventory)
-  inventory: Inventory[];
+  @hasMany(() => InventorySlot)
+  inventory: InventorySlot[];
 
   @hasOne(() => UserCredentials)
   userCredentials: UserCredentials;

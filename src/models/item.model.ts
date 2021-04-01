@@ -13,12 +13,12 @@ export class Item extends Entity {
   })
   name: string;
 
-// TODO: Implement this in the fixtures
-// Maybe change the way fixtures works to use JS instead of YML to add function
-//   @property({
-//     type: 'function',
-//   })
-//   use: Function;
+  // TODO: Implement this in the fixtures
+  // Maybe change the way fixtures works to use JS instead of YML to add function
+  //   @property({
+  //     type: 'function',
+  //   })
+  //   use: Function;
 
   @property({
     type: 'string',
@@ -41,7 +41,7 @@ export class Item extends Entity {
 }
 
 export interface ItemRelations {
-    // describe navigational properties here
-  }
-  
-  export type ItemWithRelations = Item & ItemRelations;
+  // describe navigational properties here
+}
+
+export type ItemWithRelations = Item & ItemRelations;

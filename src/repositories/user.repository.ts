@@ -1,13 +1,14 @@
 import {Getter, inject} from '@loopback/core';
 import {
   DefaultCrudRepository,
+  Filter,
   HasManyRepositoryFactory,
   HasOneRepositoryFactory,
   juggler,
   repository,
 } from '@loopback/repository';
-import {Inventory, User, UserCredentials} from '../models';
-import {InventoryRepository} from './inventory.repository';
+import {InventorySlot, Item, User, UserCredentials} from '../models';
+import {InventorySlotRepository} from './inventory-slot.repository';
 import {UserCredentialsRepository} from './user-credentials.repository';
 
 export type Credentials = {
@@ -19,7 +20,10 @@ export class UserRepository extends DefaultCrudRepository<
   User,
   typeof User.prototype.id
 > {
-  public inventory: HasManyRepositoryFactory<Inventory, typeof User.prototype.id>;
+  public inventory: HasManyRepositoryFactory<
+  InventorySlot,
+    typeof User.prototype.id
+  >;
 
   public readonly userCredentials: HasOneRepositoryFactory<
     UserCredentials,
@@ -28,7 +32,8 @@ export class UserRepository extends DefaultCrudRepository<
 
   constructor(
     @inject('datasources.mongo') dataSource: juggler.DataSource,
-    @repository(InventoryRepository) protected inventoryRepository: InventoryRepository,
+    @repository(InventorySlotRepository)
+    protected inventorySlotRepository: InventorySlotRepository,
     @repository.getter('UserCredentialsRepository')
     protected userCredentialsRepositoryGetter: Getter<UserCredentialsRepository>,
   ) {
@@ -37,11 +42,28 @@ export class UserRepository extends DefaultCrudRepository<
       'userCredentials',
       userCredentialsRepositoryGetter,
     );
-    
+
     this.inventory = this.createHasManyRepositoryFactoryFor(
       'inventory',
-      async () => inventoryRepository,
+      async () => inventorySlotRepository,
     );
+  }
+
+  async addItem(
+    userId: typeof User.prototype.id,
+    item: Item,
+    amount: number = 1,
+  ) {
+    return await this.inventorySlotRepository.updateAll({
+      item,
+      amount,
+    }, {
+      itemId: item.itemId,
+      userId,
+    }, {
+      new: true, //Return the updated value
+      upsert: true, //Create slot if not exist
+    })
   }
 
   async findCredentials(

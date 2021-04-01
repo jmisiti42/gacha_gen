@@ -26,7 +26,7 @@ export class UserController {
     public userRepository: UserRepository,
   ) {}
 
-  @post('/api')
+  @post('/api/user')
   @response(200, {
     description: 'User model instance',
     content: {'application/json': {schema: getModelSchemaRef(User)}},
@@ -47,7 +47,7 @@ export class UserController {
     return this.userRepository.create(user);
   }
 
-  @get('/api/count')
+  @get('/api/user/count')
   @response(200, {
     description: 'User model count',
     content: {'application/json': {schema: CountSchema}},
@@ -56,7 +56,7 @@ export class UserController {
     return this.userRepository.count(where);
   }
 
-  @get('/api')
+  @get('/api/users')
   @response(200, {
     description: 'Array of User model instances',
     content: {
@@ -72,26 +72,7 @@ export class UserController {
     return this.userRepository.find(filter);
   }
 
-  @patch('/api')
-  @response(200, {
-    description: 'User PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(User, {partial: true}),
-        },
-      },
-    })
-    user: User,
-    @param.where(User) where?: Where<User>,
-  ): Promise<Count> {
-    return this.userRepository.updateAll(user, where);
-  }
-
-  @get('/api/{id}')
+  @get('/api/user/{id}')
   @response(200, {
     description: 'User model instance',
     content: {
@@ -107,7 +88,7 @@ export class UserController {
     return this.userRepository.findById(id, filter);
   }
 
-  @patch('/api/{id}')
+  @patch('/api/user/{id}')
   @response(204, {
     description: 'User PATCH success',
   })
@@ -125,7 +106,7 @@ export class UserController {
     await this.userRepository.updateById(id, user);
   }
 
-  @put('/api/{id}')
+  @put('/api/user/{id}')
   @response(204, {
     description: 'User PUT success',
   })
@@ -136,7 +117,7 @@ export class UserController {
     await this.userRepository.replaceById(id, user);
   }
 
-  @del('/api/{id}')
+  @del('/api/user/{id}')
   @response(204, {
     description: 'User DELETE success',
   })

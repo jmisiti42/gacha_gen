@@ -6,4 +6,4 @@ export * from './envelope.model';
 export * from './node-mailer.model';
 export * from './email-template.model';
 export * from './user-with-password.model';
-export * from './key-and-password.model'
+export * from './key-and-password.model';

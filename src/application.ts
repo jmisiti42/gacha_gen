@@ -24,6 +24,7 @@ import {PasswordHasherBindings, UserServiceBindings} from './keys';
 import {UserWithPassword} from './models';
 import {
   ItemRepository,
+  UserCredentialsRepository,
   UserRepository,
 } from './repositories';
 import {MySequence} from './sequence';
@@ -35,7 +36,7 @@ import {
 } from './services';
 import YAML = require('yaml');
 import {ErrorHandlerMiddlewareProvider} from './middlewares';
-import { InventoryRepository } from './repositories/inventory.repository';
+import {InventorySlotRepository} from './repositories/inventory-slot.repository';
 
 /**
  * Information from package.json
@@ -114,7 +115,7 @@ export class GachaGenApplication extends BootMixin(
   async start(): Promise<void> {
     // Use `databaseSeeding` flag to control if items/users should be pre
     // populated into the database. Its value is default to `true`.
-    if (this.options.databaseSeeding !== false) {
+    if (this.options.databaseSeeding !== true) {
       await this.migrateSchema();
     }
     return super.start();
@@ -140,6 +141,10 @@ export class GachaGenApplication extends BootMixin(
     // Pre-populate users
     const userRepo = await this.getRepository(UserRepository);
     await userRepo.deleteAll();
+    const userCredentialsRepo = await this.getRepository(
+      UserCredentialsRepository,
+    );
+    await userCredentialsRepo.deleteAll();
     const usersDir = path.join(__dirname, '../fixtures/users');
     const userFiles = fs.readdirSync(usersDir);
 
@@ -156,7 +161,7 @@ export class GachaGenApplication extends BootMixin(
     }
 
     // Delete existing orders
-    const inventoryRepo = await this.getRepository(InventoryRepository);
-    await inventoryRepo.deleteAll();
+    const inventorySlotRepo = await this.getRepository(InventorySlotRepository);
+    await inventorySlotRepo.deleteAll();
   }
 }

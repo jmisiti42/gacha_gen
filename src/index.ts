@@ -18,7 +18,7 @@ export async function main(options?: ApplicationConfig) {
 
 if (require.main === module) {
   if (!process.env.PORT) {
-    console.log('No env var found for PORT, so using local config')
+    console.log('No env var found for PORT, so using local config');
   }
   const config = {
     rest: {
