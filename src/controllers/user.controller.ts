@@ -19,12 +19,95 @@ import {
 } from '@loopback/rest';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
+import _ from 'lodash';
+import {PasswordHasherBindings, UserServiceBindings} from '../keys';
+
+import {
+  PasswordHasher,
+  UserManagementService,
+} from '../services';
+import {
+  CredentialsRequestBody,
+  UserProfileSchema,
+} from './specs/user-controller.spec';
+import { inject } from '@loopback/core';
+import { Credentials, TokenServiceBindings } from '@loopback/authentication-jwt';
+import { authenticate, TokenService, UserService } from '@loopback/authentication';
+import { OPERATION_SECURITY_SPEC } from '../utils';
+import { SecurityBindings, securityId, UserProfile } from '@loopback/security';
 
 export class UserController {
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository,
+    @inject(PasswordHasherBindings.PASSWORD_HASHER)
+    public passwordHasher: PasswordHasher,
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userService: UserService<User, Credentials>,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userManagementService: UserManagementService,
   ) {}
+
+  @post('/user/login', {
+    responses: {
+      '200': {
+        description: 'Token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async login(
+    @requestBody(CredentialsRequestBody) credentials: Credentials,
+  ): Promise<{token: string}> {
+    // ensure the user exists, and the password is correct
+    const user = await this.userService.verifyCredentials(credentials);
+
+    // convert a User object into a UserProfile object (reduced set of properties)
+    const userProfile = this.userService.convertToUserProfile(user);
+
+    // create a JSON Web Token based on the user profile
+    const token = await this.jwtService.generateToken(userProfile);
+
+    return {token};
+  }
+
+  @get('/users/me', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'The current user profile',
+        content: {
+          'application/json': {
+            schema: UserProfileSchema,
+          },
+        },
+      },
+    },
+  })
+  @authenticate('jwt')
+  async printCurrentUser(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<User> {
+    // (@jannyHou)FIXME: explore a way to generate OpenAPI schema
+    // for symbol property
+
+    const userId = currentUserProfile[securityId];
+    return this.userRepository.findById(userId);
+  }
 
   @post('/api/user')
   @response(200, {

@@ -4,7 +4,7 @@ import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import {PasswordHasherBindings} from '../keys';
-import {NodeMailer, User, UserWithPassword} from '../models';
+import {InventorySlot, NodeMailer, User, UserWithPassword} from '../models';
 import {Credentials, UserRepository} from '../repositories';
 import {PasswordHasher} from './hash.password.bcryptjs';
 import _ from 'lodash';
@@ -81,20 +81,17 @@ export class UserManagementService implements UserService<User, Credentials> {
 
     const user = await this.updateResetRequestLimit(foundUser);
 
-    try {
-      await this.userRepository.updateById(user.id, user);
-    } catch (e) {
-      return e;
-    }
+    await this.userRepository.saveUser(user);
     return this.emailService.sendResetPasswordMail(user);
   }
 
-  convertToUserProfile(user: User): UserProfile {
+  convertToUserProfile(user: User): UserProfile {    
     // since first name and lastName are optional, no error is thrown if not provided
     return {
       [securityId]: user.id,
       username: user.username,
       id: user.id,
+      roles: user.roles,
     };
   }
 

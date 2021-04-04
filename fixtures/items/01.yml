@@ -1,4 +1,6 @@
 name: Dagger of the dead death
+rarity: common
+itemId: "1"
 description: A dagger able to kill the death
 details: >
   Test / Nullam at pretium ante, id finibus est. Aenean tincidunt feugiat dui, quis commodo nisl dapibus a.

@@ -53,6 +53,12 @@ export class User extends Entity {
   resetCount: number;
 
   @property({
+    type: 'array',
+    itemType: 'string',
+  })
+  roles?: string[];
+
+  @property({
     type: 'string',
   })
   resetTimestamp: string;
@@ -61,6 +67,14 @@ export class User extends Entity {
     type: 'string',
   })
   resetKeyTimestamp: string;
+
+  addItem(inventorySlot: InventorySlot): User {
+    const index = this.inventory.findIndex((slot: InventorySlot) => {
+      return slot.item.itemId === inventorySlot.id;
+    })
+    index >= 0 ? this.inventory.push(inventorySlot) : this.inventory[index].amount += inventorySlot.amount;
+    return this;
+  }
 
   constructor(data?: Partial<User>) {
     super(data);

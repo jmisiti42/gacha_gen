@@ -1,3 +1,5 @@
 name: Random item name
+rarity: rare
+itemId: "7"
 description: Random item description
 details: Random item details

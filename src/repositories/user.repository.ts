@@ -7,7 +7,7 @@ import {
   juggler,
   repository,
 } from '@loopback/repository';
-import {InventorySlot, Item, User, UserCredentials} from '../models';
+import {InventorySlot, User, UserCredentials} from '../models';
 import {InventorySlotRepository} from './inventory-slot.repository';
 import {UserCredentialsRepository} from './user-credentials.repository';
 
@@ -49,21 +49,16 @@ export class UserRepository extends DefaultCrudRepository<
     );
   }
 
-  async addItem(
-    userId: typeof User.prototype.id,
-    item: Item,
-    amount: number = 1,
-  ) {
-    return await this.inventorySlotRepository.updateAll({
-      item,
-      amount,
-    }, {
-      itemId: item.itemId,
-      userId,
-    }, {
-      new: true, //Return the updated value
-      upsert: true, //Create slot if not exist
+  async addItem(user: User, inventorySlot: InventorySlot): Promise<User> {
+    const index = user.inventory.findIndex((slot: InventorySlot) => {
+      return slot.id === inventorySlot.id;
     })
+    index >= 0 ? user.inventory.push(inventorySlot) : user.inventory[index] = inventorySlot
+    return await this.saveUser(user);
+  }
+
+  async saveUser(user: User): Promise<User> {
+    return await this.save(user);
   }
 
   async findCredentials(

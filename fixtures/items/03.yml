@@ -1,4 +1,6 @@
 name: Basic Sword
+rarity: common
+itemId: "3"
 description: A basic sword
 details: >
   - Nullam bibendum turpis non ex semper, quis iaculis lacus elementum.
