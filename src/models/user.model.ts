@@ -71,8 +71,9 @@ export class User extends Entity {
   addItem(inventorySlot: InventorySlot): User {
     const index = this.inventory.findIndex((slot: InventorySlot) => {
       return slot.item.itemId === inventorySlot.id;
-    })
-    index >= 0 ? this.inventory.push(inventorySlot) : this.inventory[index].amount += inventorySlot.amount;
+    });
+    if (index >= 0) this.inventory.push(inventorySlot);
+    else this.inventory[index].amount += inventorySlot.amount;
     return this;
   }
 

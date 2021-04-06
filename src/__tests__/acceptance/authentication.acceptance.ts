@@ -10,9 +10,9 @@ import {PasswordHasherBindings, UserServiceBindings} from '../../keys';
 import {User, UserWithPassword} from '../../models';
 import {Credentials, UserRepository} from '../../repositories';
 import {
-  PasswordHasher, UserManagementService,
-
-  validateCredentials
+  PasswordHasher,
+  UserManagementService,
+  validateCredentials,
 } from '../../services';
 import {setupApplication} from './test-helper';
 
@@ -23,7 +23,7 @@ describe('authentication services', function (this: Suite) {
   const userData = {
     email: 'unittest@loopback.io',
     username: 'unit-test',
-    roles: ['user']
+    roles: ['user'],
   };
 
   const userPassword = 'p4ssw0rd';
@@ -115,7 +115,7 @@ describe('authentication services', function (this: Suite) {
       [securityId]: user.id,
       id: user.id,
       username: user.username,
-      roles: ['user']
+      roles: ['user'],
     };
     const userProfile = userService.convertToUserProfile(user);
     expect(userProfile).to.deepEqual(expectedUserProfile);

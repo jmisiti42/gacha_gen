@@ -4,7 +4,7 @@ import {MongoDataSource} from '../datasources';
 import {InventorySlot} from '../models';
 
 export class InventorySlotRepository extends DefaultCrudRepository<
-InventorySlot,
+  InventorySlot,
   typeof InventorySlot.prototype.id
 > {
   constructor(@inject('datasources.mongo') dataSource: MongoDataSource) {

@@ -1,4 +1,11 @@
 import {
+  authenticate,
+  TokenService,
+  UserService,
+} from '@loopback/authentication';
+import {Credentials, TokenServiceBindings} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/core';
+import {
   Count,
   CountSchema,
   Filter,
@@ -7,34 +14,26 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+import {PasswordHasherBindings, UserServiceBindings} from '../keys';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
-import _ from 'lodash';
-import {PasswordHasherBindings, UserServiceBindings} from '../keys';
-
-import {
-  PasswordHasher,
-  UserManagementService,
-} from '../services';
+import {PasswordHasher, UserManagementService} from '../services';
+import {OPERATION_SECURITY_SPEC} from '../utils';
 import {
   CredentialsRequestBody,
   UserProfileSchema,
 } from './specs/user-controller.spec';
-import { inject } from '@loopback/core';
-import { Credentials, TokenServiceBindings } from '@loopback/authentication-jwt';
-import { authenticate, TokenService, UserService } from '@loopback/authentication';
-import { OPERATION_SECURITY_SPEC } from '../utils';
-import { SecurityBindings, securityId, UserProfile } from '@loopback/security';
 
 export class UserController {
   constructor(

@@ -4,7 +4,7 @@ import {MongoDataSource} from '../datasources';
 import {ItemPool} from '../models';
 
 export class ItemPoolRepository extends DefaultCrudRepository<
-ItemPool,
+  ItemPool,
   typeof ItemPool.prototype.id
 > {
   constructor(@inject('datasources.mongo') dataSource: MongoDataSource) {

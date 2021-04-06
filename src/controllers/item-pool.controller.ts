@@ -6,22 +6,18 @@ import {
   Filter,
   FilterExcludingWhere,
   repository,
-  Where
+  Where,
 } from '@loopback/repository';
 import {
-  del, get,
-  getModelSchemaRef, param,
-
-
-  patch, post,
-
-
-
-
+  del,
+  get,
+  getModelSchemaRef,
+  param,
+  patch,
+  post,
   put,
-
   requestBody,
-  response
+  response,
 } from '@loopback/rest';
 import {ItemPool} from '../models';
 import {Pool} from '../models/pool.model';
@@ -35,7 +31,7 @@ export class ItemPoolController {
     public itemPoolRepository: ItemPoolRepository,
     @repository(ItemRepository)
     public itemRepository: ItemRepository,
-  ) { }
+  ) {}
 
   @post('/pool')
   @authenticate('jwt')
@@ -66,7 +62,9 @@ export class ItemPoolController {
   @response(200, {
     security: OPERATION_SECURITY_SPEC,
     description: 'ItemPool model instance',
-    content: {'application/json': {schema: {'x-ts-type': getModelSchemaRef(ItemPool)}}},
+    content: {
+      'application/json': {schema: {'x-ts-type': getModelSchemaRef(ItemPool)}},
+    },
   })
   async addItem(
     @requestBody({
@@ -80,16 +78,30 @@ export class ItemPoolController {
     @param.path.string('id') id: string,
     @param.path.string('itemId') itemId: string,
   ): Promise<ItemPool | Error> {
-    if (pool.maxValue < pool.minValue || pool.minValue < 0 || pool.maxValue > 100) {
-      return throwError('pool values are wrongs. Be sure values are between (Min: 0 and Max: 100)', 400);
+    if (
+      pool.maxValue < pool.minValue ||
+      pool.minValue < 0 ||
+      pool.maxValue > 100
+    ) {
+      return throwError(
+        'pool values are wrongs. Be sure values are between (Min: 0 and Max: 100)',
+        400,
+      );
     }
     const itemPool = await this.itemPoolRepository.findById(id);
     const item = await this.itemRepository.findOne({where: {itemId}});
     if (!item || !itemPool) {
       return throwError((!item ? 'Item' : 'ItemPool') + ' not found.', 404);
     }
-    if (itemPool.pool.find(el => el.maxValue <= pool.maxValue && el.minValue >= pool.minValue)) {
-      return throwError(`Already an item reachable with values: ${pool.minValue} -> ${pool.maxValue} `, 400);
+    if (
+      itemPool.pool.find(
+        el => el.maxValue <= pool.maxValue && el.minValue >= pool.minValue,
+      )
+    ) {
+      return throwError(
+        `Already an item reachable with values: ${pool.minValue} -> ${pool.maxValue} `,
+        400,
+      );
     }
     pool.itemId = item.itemId;
     itemPool.pool.push(pool);
@@ -102,9 +114,7 @@ export class ItemPoolController {
     description: 'ItemPool model count',
     content: {'application/json': {schema: {'x-ts-type': CountSchema}}},
   })
-  async count(
-    @param.where(ItemPool) where?: Where<ItemPool>,
-  ): Promise<Count> {
+  async count(@param.where(ItemPool) where?: Where<ItemPool>): Promise<Count> {
     return this.itemPoolRepository.count(where);
   }
 
@@ -156,7 +166,8 @@ export class ItemPoolController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(ItemPool, {exclude: 'where'}) filter?: FilterExcludingWhere<ItemPool>
+    @param.filter(ItemPool, {exclude: 'where'})
+    filter?: FilterExcludingWhere<ItemPool>,
   ): Promise<ItemPool> {
     return this.itemPoolRepository.findById(id, filter);
   }

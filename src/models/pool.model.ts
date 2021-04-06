@@ -1,5 +1,5 @@
-import {belongsTo, Entity, hasMany, model, property} from '@loopback/repository';
-import { ItemPool } from './item-pool.model';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
+import {ItemPool} from './item-pool.model';
 import {Item} from './item.model';
 
 @model()

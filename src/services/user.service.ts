@@ -3,14 +3,14 @@ import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {PasswordHasherBindings} from '../keys';
-import {InventorySlot, NodeMailer, User, UserWithPassword} from '../models';
-import {Credentials, UserRepository} from '../repositories';
-import {PasswordHasher} from './hash.password.bcryptjs';
 import _ from 'lodash';
-import {EmailService} from './email.service';
 import {v4 as uuidv4} from 'uuid';
+import {PasswordHasherBindings} from '../keys';
+import {NodeMailer, User, UserWithPassword} from '../models';
+import {Credentials, UserRepository} from '../repositories';
 import {subtractDates} from '../utils';
+import {EmailService} from './email.service';
+import {PasswordHasher} from './hash.password.bcryptjs';
 
 export class UserManagementService implements UserService<User, Credentials> {
   constructor(
@@ -85,7 +85,7 @@ export class UserManagementService implements UserService<User, Credentials> {
     return this.emailService.sendResetPasswordMail(user);
   }
 
-  convertToUserProfile(user: User): UserProfile {    
+  convertToUserProfile(user: User): UserProfile {
     // since first name and lastName are optional, no error is thrown if not provided
     return {
       [securityId]: user.id,

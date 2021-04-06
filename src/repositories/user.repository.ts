@@ -1,7 +1,6 @@
 import {Getter, inject} from '@loopback/core';
 import {
   DefaultCrudRepository,
-  Filter,
   HasManyRepositoryFactory,
   HasOneRepositoryFactory,
   juggler,
@@ -21,7 +20,7 @@ export class UserRepository extends DefaultCrudRepository<
   typeof User.prototype.id
 > {
   public inventory: HasManyRepositoryFactory<
-  InventorySlot,
+    InventorySlot,
     typeof User.prototype.id
   >;
 
@@ -47,14 +46,6 @@ export class UserRepository extends DefaultCrudRepository<
       'inventory',
       async () => inventorySlotRepository,
     );
-  }
-
-  async addItem(user: User, inventorySlot: InventorySlot): Promise<User> {
-    const index = user.inventory.findIndex((slot: InventorySlot) => {
-      return slot.id === inventorySlot.id;
-    })
-    index >= 0 ? user.inventory.push(inventorySlot) : user.inventory[index] = inventorySlot
-    return await this.saveUser(user);
   }
 
   async saveUser(user: User): Promise<User> {

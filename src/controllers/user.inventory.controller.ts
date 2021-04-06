@@ -1,13 +1,7 @@
 import {authenticate} from '@loopback/authentication';
 import {authorize} from '@loopback/authorization';
-import {
-  repository
-} from '@loopback/repository';
-import {
-  param,
-  post,
-  requestBody
-} from '@loopback/rest';
+import {repository} from '@loopback/repository';
+import {param, post, requestBody} from '@loopback/rest';
 import {InventorySlot, Item} from '../models';
 import {ItemPoolRepository, UserRepository} from '../repositories';
 import {basicAuthorization} from '../services';
@@ -21,8 +15,8 @@ export class UserInventoryController {
     @repository(UserRepository)
     protected userRepo: UserRepository,
     @repository(ItemPoolRepository)
-    protected itemPoolRepo: ItemPoolRepository
-  ) { }
+    protected itemPoolRepo: ItemPoolRepository,
+  ) {}
 
   /**
    * Create or update the orders for a given user
@@ -50,11 +44,11 @@ export class UserInventoryController {
       },
     });
     if (!pool) {
-      return "ItemPool not found...";
+      return 'ItemPool not found...';
     }
     const user = await this.userRepo.findById(userId);
     if (!user) {
-      return "User not found...";
+      return 'User not found...';
     }
     const itemDropped = pool.rollItem(userId);
     user.addItem(itemDropped);

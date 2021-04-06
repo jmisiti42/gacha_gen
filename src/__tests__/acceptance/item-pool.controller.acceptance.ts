@@ -1,15 +1,9 @@
 import {Client} from '@loopback/testlab';
 import {GachaGenApplication} from '../..';
-import {
-  ItemPool,
-  Pool,
-  User,
-  UserWithPassword
-} from '../../models';
+import {ItemPool, Pool, User, UserWithPassword} from '../../models';
 import {ItemPoolRepository, UserRepository} from '../../repositories';
 import {UserManagementService} from '../../services';
 import {setupApplication} from './test-helper';
-
 
 describe('ItemPoolController', () => {
   let app: GachaGenApplication;
@@ -34,6 +28,18 @@ describe('ItemPoolController', () => {
 
   const userPassword = 'p4ssw0rd';
 
+  const defaultItemPool = new ItemPool({
+    description: 'Item pool test description',
+    title: 'Item pool test',
+    image: 'test.png',
+    type: 'test',
+  });
+
+  const defaultPool = new Pool({
+    amount: 1,
+    minValue: 0,
+    maxValue: 10,
+  });
 
   before('setupApplication', async () => {
     ({app, client} = await setupApplication());
@@ -41,87 +47,53 @@ describe('ItemPoolController', () => {
     userRepo = await app.get('repositories.UserRepository');
     userManagementService = await app.get('services.user.service');
 
-    adminToken = await authenticateUser(
-      await createAdmin()
-    )
-    userToken = await authenticateUser(
-      await createUser()
-    )
+    adminToken = await authenticateUser(await createAdmin());
+    userToken = await authenticateUser(await createUser());
   });
 
-
   after(async () => {
-    await clearDatabase()
+    await clearDatabase();
     await app.stop();
   });
   beforeEach(clearPools);
 
   it('Should create an ItemPool as an admin', async () => {
-    const itemPool = new ItemPool({})
-    itemPool.description = 'Item pool test description'
-    itemPool.title = 'Item pool test'
-    itemPool.image = 'test.png'
-    itemPool.type = 'test'
     await client
       .post('/pool')
       .set('Authorization', `Bearer ${adminToken}`)
       .set('Content-Type', 'application/json')
-      .send(itemPool)
+      .send(defaultItemPool)
       .expect(200);
   });
 
   it('Should fail to create an ItemPool as an user', async () => {
-    const itemPool = new ItemPool({})
-    itemPool.description = 'Item pool test description'
-    itemPool.title = 'Item pool test'
-    itemPool.image = 'test.png'
-    itemPool.type = 'test'
     await client
       .post('/pool')
       .set('Authorization', `Bearer ${userToken}`)
       .set('Content-Type', 'application/json')
-      .send(itemPool)
+      .send(defaultItemPool)
       .expect(403);
   });
 
   it('Should add an item to ItemPool as an admin', async () => {
-    const itemPool = new ItemPool({})
-    itemPool.description = 'Item pool test description'
-    itemPool.title = 'Item pool test'
-    itemPool.image = 'test.png'
-    itemPool.type = 'test'
-    const {id} = await itemPoolRepo.create(itemPool)
-    const pool = new Pool({})
-    pool.amount = 1
-    pool.minValue = 0
-    pool.maxValue = 10
+    const {id} = await itemPoolRepo.create(defaultItemPool);
     await client
       .post(`/pool/${id}/item/0`)
       .set('Authorization', `Bearer ${adminToken}`)
       .set('Content-Type', 'application/json')
-      .send(pool)
+      .send(defaultPool)
       .expect(200);
   });
 
-  it.only('Should fail to add an item to ItemPool as an user', async () => {
-    const itemPool = new ItemPool({})
-    itemPool.description = 'Item pool test description'
-    itemPool.title = 'Item pool test'
-    itemPool.image = 'test.png'
-    itemPool.type = 'test'
-    const {id} = await itemPoolRepo.create(itemPool)
-    const pool = new Pool({})
-    pool.amount = 1
-    pool.minValue = 0
-    pool.maxValue = 10
+  it('Should fail to add an item to ItemPool as an user', async () => {
+    const {id} = await itemPoolRepo.create(defaultItemPool);
     await client
       .post(`/pool/${id}/item/0`)
       .set('Authorization', `Bearer ${userToken}`)
       .set('Content-Type', 'application/json')
-      .send(pool)
+      .send(defaultPool)
       .expect(403);
   });
-
 
   async function clearPools() {
     await itemPoolRepo.deleteAll();

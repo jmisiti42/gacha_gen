@@ -1,3 +1,4 @@
 export const throwError = (message: string, statusCode: number) => {
-    throw { message, statusCode };
-}
+  /*eslint no-throw-literal: 1*/
+  throw {message, statusCode};
+};
