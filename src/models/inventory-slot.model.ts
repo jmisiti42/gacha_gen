@@ -1,33 +1,35 @@
 import {Entity, model, property, belongsTo} from '@loopback/repository';
-import { Item } from './item.model';
+import {Item} from './item.model';
 import {User} from './user.model';
 
 @model()
-export class Inventory extends Entity {
+export class InventorySlot extends Entity {
   @property({
     type: 'string',
     id: true,
+    generated: true,
   })
-  itemId: string;
+  id: string;
 
-  // Each item belong to a user, indentified by its id (userId)
+  // Each InventorySlot belong to a user, indentified by its id (userId)
   @belongsTo(() => User)
   userId: string;
 
   @property({
     type: 'string',
   })
-  name: string;
+  itemId: string;
 
   @property({
     type: 'number',
+    default: 1,
   })
-  amount?: number;
+  amount: number;
 
-  @property.array(Item, {required: true})
-  products: Item[];
+  @property(Item)
+  item: Item;
 
-  constructor(data?: Partial<Inventory>) {
+  constructor(data?: Partial<InventorySlot>) {
     super(data);
   }
 }

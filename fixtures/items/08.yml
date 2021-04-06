@@ -1,5 +1,7 @@
 name: Basic dagger
 description: A basic dagger
+rarity: epic
+itemId: "8"
 details: >
   Nullam at pretium ante, id finibus est. Aenean tincidunt feugiat dui, quis commodo nisl dapibus a.
   Integer elementum consectetur felis et malesuada. Vivamus semper ipsum et ligula maximus viverra. Fusce aliquet, nunc a laoreet pellentesque, leo dui vestibulum justo, a lacinia orci magna vitae magna.

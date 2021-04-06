@@ -1,4 +1,11 @@
 import {
+  authenticate,
+  TokenService,
+  UserService,
+} from '@loopback/authentication';
+import {Credentials, TokenServiceBindings} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/core';
+import {
   Count,
   CountSchema,
   Filter,
@@ -7,26 +14,101 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+import {PasswordHasherBindings, UserServiceBindings} from '../keys';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
+import {PasswordHasher, UserManagementService} from '../services';
+import {OPERATION_SECURITY_SPEC} from '../utils';
+import {
+  CredentialsRequestBody,
+  UserProfileSchema,
+} from './specs/user-controller.spec';
 
 export class UserController {
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository,
+    @inject(PasswordHasherBindings.PASSWORD_HASHER)
+    public passwordHasher: PasswordHasher,
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userService: UserService<User, Credentials>,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userManagementService: UserManagementService,
   ) {}
 
-  @post('/api')
+  @post('/user/login', {
+    responses: {
+      '200': {
+        description: 'Token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async login(
+    @requestBody(CredentialsRequestBody) credentials: Credentials,
+  ): Promise<{token: string}> {
+    // ensure the user exists, and the password is correct
+    const user = await this.userService.verifyCredentials(credentials);
+
+    // convert a User object into a UserProfile object (reduced set of properties)
+    const userProfile = this.userService.convertToUserProfile(user);
+
+    // create a JSON Web Token based on the user profile
+    const token = await this.jwtService.generateToken(userProfile);
+
+    return {token};
+  }
+
+  @get('/users/me', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'The current user profile',
+        content: {
+          'application/json': {
+            schema: UserProfileSchema,
+          },
+        },
+      },
+    },
+  })
+  @authenticate('jwt')
+  async printCurrentUser(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<User> {
+    // (@jannyHou)FIXME: explore a way to generate OpenAPI schema
+    // for symbol property
+
+    const userId = currentUserProfile[securityId];
+    return this.userRepository.findById(userId);
+  }
+
+  @post('/api/user')
   @response(200, {
     description: 'User model instance',
     content: {'application/json': {schema: getModelSchemaRef(User)}},
@@ -47,7 +129,7 @@ export class UserController {
     return this.userRepository.create(user);
   }
 
-  @get('/api/count')
+  @get('/api/user/count')
   @response(200, {
     description: 'User model count',
     content: {'application/json': {schema: CountSchema}},
@@ -56,7 +138,7 @@ export class UserController {
     return this.userRepository.count(where);
   }
 
-  @get('/api')
+  @get('/api/users')
   @response(200, {
     description: 'Array of User model instances',
     content: {
@@ -72,26 +154,7 @@ export class UserController {
     return this.userRepository.find(filter);
   }
 
-  @patch('/api')
-  @response(200, {
-    description: 'User PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(User, {partial: true}),
-        },
-      },
-    })
-    user: User,
-    @param.where(User) where?: Where<User>,
-  ): Promise<Count> {
-    return this.userRepository.updateAll(user, where);
-  }
-
-  @get('/api/{id}')
+  @get('/api/user/{id}')
   @response(200, {
     description: 'User model instance',
     content: {
@@ -107,7 +170,7 @@ export class UserController {
     return this.userRepository.findById(id, filter);
   }
 
-  @patch('/api/{id}')
+  @patch('/api/user/{id}')
   @response(204, {
     description: 'User PATCH success',
   })
@@ -125,7 +188,7 @@ export class UserController {
     await this.userRepository.updateById(id, user);
   }
 
-  @put('/api/{id}')
+  @put('/api/user/{id}')
   @response(204, {
     description: 'User PUT success',
   })
@@ -136,7 +199,7 @@ export class UserController {
     await this.userRepository.replaceById(id, user);
   }
 
-  @del('/api/{id}')
+  @del('/api/user/{id}')
   @response(204, {
     description: 'User DELETE success',
   })

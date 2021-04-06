@@ -3,14 +3,14 @@ import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
+import _ from 'lodash';
+import {v4 as uuidv4} from 'uuid';
 import {PasswordHasherBindings} from '../keys';
 import {NodeMailer, User, UserWithPassword} from '../models';
 import {Credentials, UserRepository} from '../repositories';
-import {PasswordHasher} from './hash.password.bcryptjs';
-import _ from 'lodash';
-import {EmailService} from './email.service';
-import {v4 as uuidv4} from 'uuid';
 import {subtractDates} from '../utils';
+import {EmailService} from './email.service';
+import {PasswordHasher} from './hash.password.bcryptjs';
 
 export class UserManagementService implements UserService<User, Credentials> {
   constructor(
@@ -81,11 +81,7 @@ export class UserManagementService implements UserService<User, Credentials> {
 
     const user = await this.updateResetRequestLimit(foundUser);
 
-    try {
-      await this.userRepository.updateById(user.id, user);
-    } catch (e) {
-      return e;
-    }
+    await this.userRepository.saveUser(user);
     return this.emailService.sendResetPasswordMail(user);
   }
 
@@ -95,6 +91,7 @@ export class UserManagementService implements UserService<User, Credentials> {
       [securityId]: user.id,
       username: user.username,
       id: user.id,
+      roles: user.roles,
     };
   }
 

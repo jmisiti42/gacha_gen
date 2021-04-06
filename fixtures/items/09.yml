@@ -1,5 +1,7 @@
 name: Heal potion
 description: A healing potion
+rarity: common
+itemId: "9"
 details: >
   TODO
   implement function handling

@@ -6,8 +6,8 @@ import {
   juggler,
   repository,
 } from '@loopback/repository';
-import {Inventory, User, UserCredentials} from '../models';
-import {InventoryRepository} from './inventory.repository';
+import {InventorySlot, User, UserCredentials} from '../models';
+import {InventorySlotRepository} from './inventory-slot.repository';
 import {UserCredentialsRepository} from './user-credentials.repository';
 
 export type Credentials = {
@@ -19,7 +19,10 @@ export class UserRepository extends DefaultCrudRepository<
   User,
   typeof User.prototype.id
 > {
-  public inventory: HasManyRepositoryFactory<Inventory, typeof User.prototype.id>;
+  public inventory: HasManyRepositoryFactory<
+    InventorySlot,
+    typeof User.prototype.id
+  >;
 
   public readonly userCredentials: HasOneRepositoryFactory<
     UserCredentials,
@@ -28,7 +31,8 @@ export class UserRepository extends DefaultCrudRepository<
 
   constructor(
     @inject('datasources.mongo') dataSource: juggler.DataSource,
-    @repository(InventoryRepository) protected inventoryRepository: InventoryRepository,
+    @repository(InventorySlotRepository)
+    protected inventorySlotRepository: InventorySlotRepository,
     @repository.getter('UserCredentialsRepository')
     protected userCredentialsRepositoryGetter: Getter<UserCredentialsRepository>,
   ) {
@@ -37,11 +41,15 @@ export class UserRepository extends DefaultCrudRepository<
       'userCredentials',
       userCredentialsRepositoryGetter,
     );
-    
+
     this.inventory = this.createHasManyRepositoryFactoryFor(
       'inventory',
-      async () => inventoryRepository,
+      async () => inventorySlotRepository,
     );
+  }
+
+  async saveUser(user: User): Promise<User> {
+    return this.save(user);
   }
 
   async findCredentials(

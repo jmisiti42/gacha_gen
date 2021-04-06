@@ -1,5 +1,5 @@
 import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
-import {Inventory} from './inventory.model';
+import {InventorySlot} from './inventory-slot.model';
 import {UserCredentials} from './user-credentials.model';
 
 @model({
@@ -36,8 +36,8 @@ export class User extends Entity {
   })
   email: string;
 
-  @hasMany(() => Inventory)
-  inventory: Inventory[];
+  @hasMany(() => InventorySlot)
+  inventory: InventorySlot[];
 
   @hasOne(() => UserCredentials)
   userCredentials: UserCredentials;
@@ -53,6 +53,12 @@ export class User extends Entity {
   resetCount: number;
 
   @property({
+    type: 'array',
+    itemType: 'string',
+  })
+  roles?: string[];
+
+  @property({
     type: 'string',
   })
   resetTimestamp: string;
@@ -61,6 +67,15 @@ export class User extends Entity {
     type: 'string',
   })
   resetKeyTimestamp: string;
+
+  addItem(inventorySlot: InventorySlot): User {
+    const index = this.inventory.findIndex((slot: InventorySlot) => {
+      return slot.item.itemId === inventorySlot.id;
+    });
+    if (index >= 0) this.inventory.push(inventorySlot);
+    else this.inventory[index].amount += inventorySlot.amount;
+    return this;
+  }
 
   constructor(data?: Partial<User>) {
     super(data);

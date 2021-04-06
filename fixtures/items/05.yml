@@ -1,4 +1,6 @@
 name: Staff of the dead death
+rarity: legendary+
+itemId: "5"
 image: https://images.unsplash.com/photo-1571380401583-72ca84994796?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60
 description: A staff able to kill the death
 details: >
