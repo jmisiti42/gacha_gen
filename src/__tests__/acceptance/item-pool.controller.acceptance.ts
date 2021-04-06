@@ -56,7 +56,7 @@ describe('ItemPoolController', () => {
   });
   beforeEach(clearPools);
 
-  it('Admin can create an item pool', async () => {
+  it('Should create an ItemPool as an admin', async () => {
     const itemPool = new ItemPool({})
     itemPool.description = 'Item pool test description'
     itemPool.title = 'Item pool test'
@@ -70,7 +70,7 @@ describe('ItemPoolController', () => {
       .expect(200);
   });
 
-  it('User cannot create an item pool', async () => {
+  it('Should fail to create an ItemPool as an user', async () => {
     const itemPool = new ItemPool({})
     itemPool.description = 'Item pool test description'
     itemPool.title = 'Item pool test'
@@ -102,6 +102,26 @@ describe('ItemPoolController', () => {
       .send(pool)
       .expect(200);
   });
+
+  it.only('Should fail to add an item to ItemPool as an user', async () => {
+    const itemPool = new ItemPool({})
+    itemPool.description = 'Item pool test description'
+    itemPool.title = 'Item pool test'
+    itemPool.image = 'test.png'
+    itemPool.type = 'test'
+    const {id} = await itemPoolRepo.create(itemPool)
+    const pool = new Pool({})
+    pool.amount = 1
+    pool.minValue = 0
+    pool.maxValue = 10
+    await client
+      .post(`/pool/${id}/item/0`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .set('Content-Type', 'application/json')
+      .send(pool)
+      .expect(403);
+  });
+
 
   async function clearPools() {
     await itemPoolRepo.deleteAll();
