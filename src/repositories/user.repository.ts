@@ -58,7 +58,7 @@ export class UserRepository extends DefaultCrudRepository<
   }
 
   async saveUser(user: User): Promise<User> {
-    return await this.save(user);
+    return this.save(user);
   }
 
   async findCredentials(

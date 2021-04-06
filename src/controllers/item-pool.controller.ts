@@ -1,40 +1,45 @@
-import { authenticate } from '@loopback/authentication';
-import { authorize } from '@loopback/authorization';
+import {authenticate} from '@loopback/authentication';
+import {authorize} from '@loopback/authorization';
 import {
   Count,
   CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
+  Where
 } from '@loopback/repository';
 import {
-  post,
-  param,
-  get,
-  getModelSchemaRef,
-  patch,
+  del, get,
+  getModelSchemaRef, param,
+
+
+  patch, post,
+
+
+
+
   put,
-  del,
+
   requestBody,
-  response,
+  response
 } from '@loopback/rest';
-import { partial } from 'lodash';
-import {Item, ItemPool, ItemPoolRelations} from '../models';
-import { Pool } from '../models/pool.model';
+import {ItemPool} from '../models';
+import {Pool} from '../models/pool.model';
 import {ItemPoolRepository, ItemRepository} from '../repositories';
-import { basicAuthorization } from '../services';
-import { OPERATION_SECURITY_SPEC, throwError } from '../utils';
+import {basicAuthorization} from '../services';
+import {OPERATION_SECURITY_SPEC, throwError} from '../utils';
 
 export class ItemPoolController {
   constructor(
     @repository(ItemPoolRepository)
-    public itemPoolRepository : ItemPoolRepository,
+    public itemPoolRepository: ItemPoolRepository,
     @repository(ItemRepository)
-    public itemRepository : ItemRepository,
-  ) {}
+    public itemRepository: ItemRepository,
+  ) { }
 
   @post('/pool')
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   @response(200, {
     security: OPERATION_SECURITY_SPEC,
     description: 'ItemPool model instance',
@@ -67,7 +72,7 @@ export class ItemPoolController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Pool, { partial: true }),
+          schema: getModelSchemaRef(Pool, {partial: true}),
         },
       },
     })
@@ -79,11 +84,11 @@ export class ItemPoolController {
       return throwError('pool values are wrongs. Be sure values are between (Min: 0 and Max: 100)', 400);
     }
     const itemPool = await this.itemPoolRepository.findById(id);
-    const item = await this.itemRepository.findOne({ where: { itemId }});
+    const item = await this.itemRepository.findOne({where: {itemId}});
     if (!item || !itemPool) {
       return throwError((!item ? 'Item' : 'ItemPool') + ' not found.', 404);
-    }    
-    if (itemPool.pool.find(el => el.maxValue <= pool.maxValue && el.minValue >= pool.minValue)) {      
+    }
+    if (itemPool.pool.find(el => el.maxValue <= pool.maxValue && el.minValue >= pool.minValue)) {
       return throwError(`Already an item reachable with values: ${pool.minValue} -> ${pool.maxValue} `, 400);
     }
     pool.itemId = item.itemId;

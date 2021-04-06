@@ -1,15 +1,15 @@
 import {authenticate} from '@loopback/authentication';
 import {authorize} from '@loopback/authorization';
 import {
-  repository,
+  repository
 } from '@loopback/repository';
 import {
   param,
   post,
-  requestBody,
+  requestBody
 } from '@loopback/rest';
 import {InventorySlot, Item} from '../models';
-import {UserRepository, ItemPoolRepository} from '../repositories';
+import {ItemPoolRepository, UserRepository} from '../repositories';
 import {basicAuthorization} from '../services';
 import {OPERATION_SECURITY_SPEC} from '../utils';
 
@@ -22,7 +22,7 @@ export class UserInventoryController {
     protected userRepo: UserRepository,
     @repository(ItemPoolRepository)
     protected itemPoolRepo: ItemPoolRepository
-  ) {}
+  ) { }
 
   /**
    * Create or update the orders for a given user
@@ -59,7 +59,7 @@ export class UserInventoryController {
     const itemDropped = pool.rollItem(userId);
     user.addItem(itemDropped);
     await this.userRepo.save(user);
-    
+
     return itemDropped.item;
   }
 }
