@@ -1,10 +1,10 @@
-import {Client} from '@loopback/testlab';
+import {Client, expect} from '@loopback/testlab';
+import _ from 'lodash';
 import {GachaGenApplication} from '../..';
 import {Item, User, UserWithPassword} from '../../models';
 import {ItemRepository, UserRepository} from '../../repositories';
 import {UserManagementService} from '../../services';
 import {setupApplication} from './test-helper';
-import _ from 'lodash'
 
 describe.only('itemController', () => {
   let app: GachaGenApplication;
@@ -30,9 +30,8 @@ describe.only('itemController', () => {
   const userPassword = 'p4ssw0rd';
 
   const defaultItem = new Item({
-    name: 'Basic Shield',   
+    name: 'Basic Shield',
     rarity: 'common',
-    itemId : '10',
     image: 'https://images.unsplash.com/photo-1571380401583-72ca84994796?ixlib=rb1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60',
     description: 'A basic shield',
     details:
@@ -41,9 +40,9 @@ describe.only('itemController', () => {
 
 
   before('setupApplication', async () => {
-    try{
+    try {
       ({app, client} = await setupApplication());
-    } catch(e){
+    } catch (e) {
       console.log(e);
     }
     itemRepo = await app.get('repositories.ItemRepository');
@@ -59,9 +58,26 @@ describe.only('itemController', () => {
     await app.stop();
   });
 
-  beforeEach(clearPools);
+  it('Should create two items  with auto itemIdcreation ', async () => {
+
+    const firstItem = await client
+      .post('/item')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Content-Type', 'application/json')
+      .send(defaultItem)
+      .expect(200);
+    const secondtItem = await client
+      .post('/item')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Content-Type', 'application/json')
+      .send(defaultItem)
+      .expect(200);
+    expect(parseInt(secondtItem.body.itemId)).to.be.equal(parseInt(firstItem.body.itemId) + 1)
+
+  });
+
   it('Should fail to create an item with wrong params', async () => {
-    const wrongItem : Partial<Item> = _.cloneDeep(defaultItem)
+    const wrongItem: Partial<Item> = _.cloneDeep(defaultItem)
     wrongItem.name = undefined
     await client
       .post('/item')
@@ -71,7 +87,7 @@ describe.only('itemController', () => {
       .expect(422);
   });
 
-  it.only('Should create an item as an admin', async () => {
+  it('Should create an item as an admin', async () => {
     await client
       .post('/item')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -128,10 +144,6 @@ describe.only('itemController', () => {
       .send(defaultItem)
       .expect(403);
   });
-
-  async function clearPools() {
-  //  await itemRepo.deleteAll();
-  }
 
   async function clearDatabase() {
     await userRepo.deleteAll();

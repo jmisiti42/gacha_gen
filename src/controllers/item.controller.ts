@@ -43,16 +43,17 @@ export class ItemController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(Item, {
+            exclude : ['id', 'itemId']
           }),
         },
       },
     })
-    item : Required<Omit <Item, 'id'| 'itemId'>> & Partial<Omit<Item, 'id'>>,
+    item : Omit <Item, 'id'>
   ): Promise<Item> {
-    console.log({item})
-    const test = await this.itemRepository.findOne({ order: ['itemId DESC'] })
-    console.log({test});    
-//    item.itemId ? item.itemId : item.generateItemId()
+    const lastItem = await this.itemRepository.findOne({ order: ['id DESC'] })
+    if (!lastItem)
+      return throwError('error during item creation', 500)
+    item.itemId = `${parseInt(lastItem.itemId) + 1}`
     return this.itemRepository.create(item);
   }
 
