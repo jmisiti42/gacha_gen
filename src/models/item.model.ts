@@ -24,12 +24,12 @@ export class Item extends Entity {
 
   @property({
     type: 'string',
-    id: true,
   })
   itemId: string;
 
   @property({
     type: 'string',
+    required : true,
   })
   name: string;
 
@@ -61,6 +61,16 @@ export class Item extends Entity {
     type: 'string',
   })
   details: string;
+
+  // generateItemId(): string {
+  //   const string =  => {
+  //     return slot.item.itemId === inventorySlot.id;
+  //   });
+  //   if (index >= 0) this.inventory.push(inventorySlot);
+  //   else this.inventory[index].amount += inventorySlot.amount;
+  //   return this;
+  // }
+
 
   constructor(data?: Partial<Item>) {
     super(data);

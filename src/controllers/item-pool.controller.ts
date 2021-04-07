@@ -57,10 +57,7 @@ export class ItemPoolController {
   }
 
   @post('/pool/{id}/item/{itemId}')
-  @authenticate('jwt')
-  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   @response(200, {
-    security: OPERATION_SECURITY_SPEC,
     description: 'ItemPool model instance',
     content: {
       'application/json': {schema: {'x-ts-type': getModelSchemaRef(ItemPool)}},
