@@ -1,63 +1,46 @@
 import {
   authenticate,
   TokenService,
-  UserService
+  UserService as UserServiceCredentials,
 } from '@loopback/authentication';
-import {Credentials, TokenServiceBindings} from '@loopback/authentication-jwt';
+import {TokenServiceBindings} from '@loopback/authentication-jwt';
 import {authorize} from '@loopback/authorization';
 import {inject} from '@loopback/core';
+import {repository} from '@loopback/repository';
 import {
-  Count,
-  CountSchema,
-
-
-  Filter,
-
-
-  FilterExcludingWhere,
-
-
-  model,
-
-
-  property,
-
-
-  repository,
-  Where
-} from '@loopback/repository';
-import {
-  del,
   get,
   getModelSchemaRef,
   HttpErrors,
   param,
-  patch,
   post,
   put,
   requestBody,
-  response
 } from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import _ from 'lodash';
 import {PasswordHasherBindings, UserServiceBindings} from '../keys';
-import {User, UserWithPassword} from '../models';
-import {UserRepository} from '../repositories';
-import {basicAuthorization, PasswordHasher, UserManagementService, validateCredentials} from '../services';
+import {
+  NodeMailer,
+  ResetPasswordInit,
+  User,
+  KeyAndPassword,
+  UserWithPassword,
+} from '../models';
+import {Credentials, UserRepository} from '../repositories';
+import {
+  basicAuthorization,
+  PasswordHasher,
+  UserService,
+  validateCredentials,
+  validateKeyPassword,
+} from '../services';
 import {OPERATION_SECURITY_SPEC} from '../utils';
 import {
   CredentialsRequestBody,
-  UserProfileSchema
-} from './specs/user-controller.spec';
-
-@model()
-export class NewUserRequest extends User {
-  @property({
-    type: 'string',
-    required: true,
-  })
-  password: string;
-}
+  PasswordResetRequestBody,
+  UserProfileSchema,
+} from './specs/user-controller.specs';
+import isemail from 'isemail';
 
 export class UserController {
   constructor(
@@ -68,10 +51,52 @@ export class UserController {
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
-    public userService: UserService<User, Credentials>,
+    public userServiceCredentials: UserServiceCredentials<User, Credentials>,
     @inject(UserServiceBindings.USER_SERVICE)
-    public userManagementService: UserManagementService,
-  ) { }
+    public userService: UserService,
+  ) {}
+
+  @post('/user/signup', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            'x-ts-type': User,
+          },
+        },
+      },
+    },
+  })
+  async signup(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(UserWithPassword, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    newUserRequest: UserWithPassword,
+  ): Promise<User> {
+    // All new users have the "user" role by default if no roles passed
+    newUserRequest.roles = newUserRequest.roles ?? ['user'];
+    // ensure a valid email value and password value
+    validateCredentials(_.pick(newUserRequest, ['email', 'password']));
+
+    try {
+      newUserRequest.resetKey = '';
+      return await this.userService.createUser(newUserRequest);
+    } catch (error) {
+      // MongoError 11000 duplicate key
+      if (error.code === 11000 && error.errmsg.includes('index: uniqueEmail')) {
+        throw new HttpErrors.Conflict('Email value is already taken');
+      } else {
+        throw error;
+      }
+    }
+  }
 
   @post('/user/signin', {
     responses: {
@@ -96,10 +121,12 @@ export class UserController {
     @requestBody(CredentialsRequestBody) credentials: Credentials,
   ): Promise<{token: string}> {
     // ensure the user exists, and the password is correct
-    const user = await this.userService.verifyCredentials(credentials);
+    const user = await this.userServiceCredentials.verifyCredentials(
+      credentials,
+    );
 
     // convert a User object into a UserProfile object (reduced set of properties)
-    const userProfile = this.userService.convertToUserProfile(user);
+    const userProfile = this.userServiceCredentials.convertToUserProfile(user);
 
     // create a JSON Web Token based on the user profile
     const token = await this.jwtService.generateToken(userProfile);
@@ -107,14 +134,71 @@ export class UserController {
     return {token};
   }
 
-  @get('/users/me', {
+  @put('/user/{id}', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            'x-ts-type': User,
+          },
+        },
+      },
+    },
+  })
+  @authenticate('jwt')
+  @authorize({
+    allowedRoles: ['admin', 'user'],
+    voters: [basicAuthorization],
+  })
+  async set(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+    @param.path.string('id') id: string,
+    @requestBody({description: 'update user'}) user: User,
+  ): Promise<void> {
+    try {
+      // Only admin can assign roles
+      if (!currentUserProfile.roles.includes('admin')) {
+        delete user.roles;
+      }
+      return await this.userRepository.updateById(id, user);
+    } catch (e) {
+      return e;
+    }
+  }
+
+  @get('/user/{id}', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            'x-ts-type': User,
+          },
+        },
+      },
+    },
+  })
+  @authenticate('jwt')
+  @authorize({
+    allowedRoles: ['admin', 'support', 'user'],
+    voters: [basicAuthorization],
+  })
+  async findById(@param.path.string('id') id: string): Promise<User> {
+    return this.userRepository.findById(id);
+  }
+
+  @get('/user/me', {
     security: OPERATION_SECURITY_SPEC,
     responses: {
       '200': {
         description: 'The current user profile',
         content: {
           'application/json': {
-            schema: UserProfileSchema,
+            'x-ts-type': UserProfileSchema,
           },
         },
       },
@@ -128,150 +212,121 @@ export class UserController {
     // (@jannyHou)FIXME: explore a way to generate OpenAPI schema
     // for symbol property
 
-    const userId = currentUserProfile[securityId];
-    return this.userRepository.findById(userId);
+    const id = currentUserProfile[securityId];
+    return this.userRepository.findById(id);
   }
 
-  @post('/api/user')
-  @authenticate('jwt')
-  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
-  @response(200, {
+  @put('/user/forgot-password', {
     security: OPERATION_SECURITY_SPEC,
-    description: 'User model instance',
-    content: {'application/json': {schema: getModelSchemaRef(User)}},
-  })
-  async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(User, {
-            title: 'NewUser',
-            exclude: ['id'],
-          }),
-        },
-      },
-    })
-    user: Omit<User, 'id'>,
-  ): Promise<User> {
-    return this.userRepository.create(user);
-  }
-  @post('/user/signup', {
     responses: {
       '200': {
-        description: 'User',
+        description: 'The updated user profile',
         content: {
           'application/json': {
-            schema: {
-              'x-ts-type': User,
-            },
+            'x-ts-type': UserProfileSchema,
           },
         },
       },
     },
   })
-  async signup(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(UserWithPassword, {
-            title: 'NewUser',
-          }),
-        },
+  @authenticate('jwt')
+  async forgotPassword(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+    @requestBody(PasswordResetRequestBody) credentials: Credentials,
+  ): Promise<{token: string}> {
+    const {email, password} = credentials;
+    const {id} = currentUserProfile;
+
+    const user = await this.userRepository.findById(id);
+
+    if (!user) {
+      throw new HttpErrors.NotFound('User account not found');
+    }
+
+    if (email !== user?.email) {
+      throw new HttpErrors.Forbidden('Invalid email address');
+    }
+
+    validateCredentials(_.pick(credentials, ['email', 'password']));
+
+    const passwordHash = await this.passwordHasher.hashPassword(password);
+
+    await this.userRepository
+      .userCredentials(user.id)
+      .patch({password: passwordHash});
+
+    const userProfile = this.userServiceCredentials.convertToUserProfile(user);
+
+    const token = await this.jwtService.generateToken(userProfile);
+
+    return {token};
+  }
+
+  @post('/user/reset-password/init', {
+    responses: {
+      '200': {
+        description: 'Confirmation that reset password email has been sent',
       },
-    })
-    user: UserWithPassword,
-  ): Promise<User> {
-    // ensure a valid email value and password value
-    validateCredentials(_.pick(user, ['email', 'password']));
+    },
+  })
+  async resetPasswordInit(
+    @requestBody() resetPasswordInit: ResetPasswordInit,
+  ): Promise<string> {
+    if (!isemail.validate(resetPasswordInit.email)) {
+      throw new HttpErrors.UnprocessableEntity('Invalid email address');
+    }
+
+    const nodeMailer: NodeMailer = await this.userService.requestPasswordReset(
+      resetPasswordInit.email,
+    );
+
+    if (nodeMailer.accepted.length) {
+      return 'Successfully sent reset password link';
+    }
+    throw new HttpErrors.InternalServerError(
+      'Error sending reset password email',
+    );
+  }
+
+  @put('/user/reset-password/finish', {
+    responses: {
+      '200': {
+        description: 'A successful password reset response',
+      },
+    },
+  })
+  async resetPasswordFinish(
+    @requestBody() keyAndPassword: KeyAndPassword,
+  ): Promise<string> {
+    validateKeyPassword(keyAndPassword);
+
+    const foundUser = await this.userRepository.findOne({
+      where: {resetKey: keyAndPassword.resetKey},
+    });
+
+    if (!foundUser) {
+      throw new HttpErrors.NotFound(
+        'No associated account for the provided reset key',
+      );
+    }
+
+    const user = await this.userService.validateResetKeyLifeSpan(foundUser);
+
+    const passwordHash = await this.passwordHasher.hashPassword(
+      keyAndPassword.password,
+    );
 
     try {
-      user.resetKey = '';
-      return await this.userManagementService.createUser(user);
-    } catch (error) {
-      // MongoError 11000 duplicate key
-      if (error.code === 11000 && error.errmsg.includes('index: uniqueEmail')) {
-        throw new HttpErrors.Conflict('Email value is already taken');
-      } else {
-        throw error;
-      }
+      await this.userRepository
+        .userCredentials(user.id)
+        .patch({password: passwordHash});
+
+      await this.userRepository.updateById(user.id, user);
+    } catch (e) {
+      return e;
     }
-  }
 
-  @get('/api/user/count')
-  @response(200, {
-    description: 'User model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(@param.where(User) where?: Where<User>): Promise<Count> {
-    return this.userRepository.count(where);
-  }
-
-  @get('/api/users')
-  @response(200, {
-    description: 'Array of User model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(User, {includeRelations: true}),
-        },
-      },
-    },
-  })
-  async find(@param.filter(User) filter?: Filter<User>): Promise<User[]> {
-    return this.userRepository.find(filter);
-  }
-
-  @get('/api/user/{id}')
-  @response(200, {
-    description: 'User model instance',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(User, {includeRelations: true}),
-      },
-    },
-  })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(User, {exclude: 'where'}) filter?: FilterExcludingWhere<User>,
-  ): Promise<User> {
-    return this.userRepository.findById(id, filter);
-  }
-
-  @patch('/api/user/{id}')
-  @response(204, {
-    description: 'User PATCH success',
-  })
-  async updateById(
-    @param.path.string('id') id: string,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(User, {partial: true}),
-        },
-      },
-    })
-    user: User,
-  ): Promise<void> {
-    await this.userRepository.updateById(id, user);
-  }
-
-  @put('/api/user/{id}')
-  @response(204, {
-    description: 'User PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() user: User,
-  ): Promise<void> {
-    await this.userRepository.replaceById(id, user);
-  }
-
-  @del('/api/user/{id}')
-  @response(204, {
-    description: 'User DELETE success',
-  })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
-    await this.userRepository.deleteById(id);
+    return 'Password reset successful';
   }
 }

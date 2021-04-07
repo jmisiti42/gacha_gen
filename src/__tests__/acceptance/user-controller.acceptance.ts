@@ -6,17 +6,13 @@ import {GachaGenApplication} from '../..';
 import {UserController} from '../../controllers';
 import {KeyAndPassword, UserWithPassword} from '../../models';
 import {UserRepository} from '../../repositories';
-import {
-  JWTService,
-
-  UserManagementService
-} from '../../services';
+import {JWTService, UserService} from '../../services';
 import {setupApplication} from './test-helper';
 
-describe.only('UserManagementController', () => {
+describe('UserController', () => {
   let app: GachaGenApplication;
   let client: Client;
-  let userManagementService: UserManagementService;
+  let userService: UserService;
   let userRepo: UserRepository;
   let controller: UserController;
 
@@ -32,7 +28,7 @@ describe.only('UserManagementController', () => {
   before('setupApplication', async () => {
     ({app, client} = await setupApplication());
     userRepo = await app.get('repositories.UserRepository');
-    userManagementService = await app.get('services.user.service');
+    userService = await app.get('services.user.service');
     // link tests to controller
     expect(controller).to.be.undefined();
   });
@@ -49,8 +45,8 @@ describe.only('UserManagementController', () => {
     const res = await client
       .post('/user/signup')
       .send({...userData, password: userPassword})
-    console.log(res)
-    // Assertions
+      .expect(200);
+
     expect(res.body.email).to.equal('test@loopback.io');
     expect(res.body.username).to.equal('Example');
     expect(res.body).to.have.property('id');
@@ -122,16 +118,16 @@ describe.only('UserManagementController', () => {
     expect(res.body.error.message).to.equal('Email value is already taken');
   });
 
-  it('protects GET /users/{id} with authorization', async () => {
+  it('protects GET /user/{id} with authorization', async () => {
     const newUser = await createAUser();
-    await client.get(`/users/${newUser.id}`).expect(401);
+    await client.get(`/user/${newUser.id}`).expect(401);
   });
 
   describe('forgot-password', () => {
-    it('throws error for PUT /users/forgot-password when resetting password for non logged in account', async () => {
+    it('throws error for PUT /user/forgot-password when resetting password for non logged in account', async () => {
       const token = await authenticateUser();
       const res = await client
-        .put('/users/forgot-password')
+        .put('/user/forgot-password')
         .set('Authorization', 'Bearer ' + token)
         .send({
           email: 'john@example.io',
@@ -146,7 +142,7 @@ describe.only('UserManagementController', () => {
       const token = await authenticateUser();
 
       const res = await client
-        .put('/users/forgot-password')
+        .put('/user/forgot-password')
         .set('Authorization', 'Bearer ' + token)
         .send({email: 'test@example.com', password: '12345'})
         .expect(422);
@@ -160,7 +156,7 @@ describe.only('UserManagementController', () => {
       const token = await authenticateUser();
 
       const res = await client
-        .put('/users/forgot-password')
+        .put('/user/forgot-password')
         .set('Authorization', 'Bearer ' + token)
         .send({email: userData.email, password: 'password@12345678'})
         .expect(200);
@@ -170,17 +166,17 @@ describe.only('UserManagementController', () => {
   });
 
   describe('reset-password-init', () => {
-    it('throws error for POST /users/reset-password-init with an invalid email', async () => {
+    it('throws error for POST /user/reset-password-init with an invalid email', async () => {
       const res = await client
-        .post('/users/reset-password/init')
+        .post('/user/reset-password/init')
         .send({email: 'john'})
         .expect(422);
       expect(res.body.error.message).to.equal('Invalid email address');
     });
 
-    it('throws error for POST /users/reset-password-init for non-existent account email', async () => {
+    it('throws error for POST /user/reset-password-init for non-existent account email', async () => {
       const res = await client
-        .post('/users/reset-password/init')
+        .post('/user/reset-password/init')
         .send({email: 'john@example'})
         .expect(404);
       expect(res.body.error.message).to.equal(
@@ -197,12 +193,12 @@ describe.only('UserManagementController', () => {
       };
 
       await client
-        .post('/users')
+        .post('/user/signup')
         .send({...tempData, password: userPassword})
         .expect(200);
 
       await client
-        .post('/users/reset-password/init')
+        .post('/user/reset-password/init')
         .send({email: 'john@loopback.io'})
         .expect(500);
     });
@@ -211,9 +207,9 @@ describe.only('UserManagementController', () => {
   });
 
   describe('reset-password-finish', () => {
-    it('throws error for PUT /users/reset-password-finish with an invalid key', async () => {
+    it('throws error for PUT /user/reset-password-finish with an invalid key', async () => {
       const res = await client
-        .put('/users/reset-password/finish')
+        .put('/user/reset-password/finish')
         .send(
           new KeyAndPassword({
             resetKey: 'john',
@@ -227,9 +223,9 @@ describe.only('UserManagementController', () => {
       );
     });
 
-    it('throws error for PUT /users/reset-password-finish with mismatch passwords', async () => {
+    it('throws error for PUT /user/reset-password-finish with mismatch passwords', async () => {
       const res = await client
-        .put('/users/reset-password/finish')
+        .put('/user/reset-password/finish')
         .send(
           new KeyAndPassword({
             resetKey: 'john',
@@ -249,7 +245,7 @@ describe.only('UserManagementController', () => {
       const newUser = await createAUser();
 
       const res = await client
-        .post('/users/login')
+        .post('/user/signin')
         .send({email: newUser.email, password: userPassword})
         .expect(200);
 
@@ -261,7 +257,7 @@ describe.only('UserManagementController', () => {
       await createAUser();
 
       const res = await client
-        .post('/users/login')
+        .post('/user/signin')
         .send({email: 'idontexist@example.com', password: userPassword})
         .expect(401);
 
@@ -272,7 +268,7 @@ describe.only('UserManagementController', () => {
       const newUser = await createAUser();
 
       const res = await client
-        .post('/users/login')
+        .post('/user/signin')
         .send({email: newUser.email, password: 'wrongpassword'})
         .expect(401);
 
@@ -283,14 +279,14 @@ describe.only('UserManagementController', () => {
       const newUser = await createAUser();
 
       let res = await client
-        .post('/users/login')
+        .post('/user/signin')
         .send({email: newUser.email, password: userPassword})
         .expect(200);
 
       const token = res.body.token;
 
       res = await client
-        .get('/users/me')
+        .get('/user/me')
         .set('Authorization', 'Bearer ' + token)
         .expect(200);
 
@@ -301,7 +297,7 @@ describe.only('UserManagementController', () => {
     });
 
     it('users/me returns an error when a JWT token is not provided', async () => {
-      const res = await client.get('/users/me').expect(401);
+      const res = await client.get('/user/me').expect(401);
 
       expect(res.body.error.message).to.equal(
         'Authorization header not found.',
@@ -310,7 +306,7 @@ describe.only('UserManagementController', () => {
 
     it('users/me returns an error when an invalid JWT token is provided', async () => {
       const res = await client
-        .get('/users/me')
+        .get('/user/me')
         .set('Authorization', 'Bearer ' + 'xxx.yyy.zzz')
         .expect(401);
 
@@ -321,7 +317,7 @@ describe.only('UserManagementController', () => {
 
     it(`users/me returns an error when 'Bearer ' is not found in Authorization header`, async () => {
       const res = await client
-        .get('/users/me')
+        .get('/user/me')
         .set('Authorization', 'NotB3@r3r ' + 'xxx.yyy.zzz')
         .expect(401);
 
@@ -332,7 +328,7 @@ describe.only('UserManagementController', () => {
 
     it('users/me returns an error when an expired JWT token is provided', async () => {
       const res = await client
-        .get('/users/me')
+        .get('/user/me')
         .set('Authorization', 'Bearer ' + expiredToken)
         .expect(401);
 
@@ -353,7 +349,7 @@ describe.only('UserManagementController', () => {
   async function createAUser() {
     const userWithPassword = new UserWithPassword(userData);
     userWithPassword.password = userPassword;
-    return userManagementService.createUser(userWithPassword);
+    return userService.createUser(userWithPassword);
   }
 
   /**
@@ -377,7 +373,7 @@ describe.only('UserManagementController', () => {
     const user = await createAUser();
 
     const res = await client
-      .post('/users/login')
+      .post('/user/signin')
       .send({email: user.email, password: userPassword})
       .expect(200);
 

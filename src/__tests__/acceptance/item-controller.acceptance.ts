@@ -3,7 +3,7 @@ import _ from 'lodash';
 import {GachaGenApplication} from '../..';
 import {Item, User, UserWithPassword} from '../../models';
 import {ItemRepository, UserRepository} from '../../repositories';
-import {UserManagementService} from '../../services';
+import {UserService} from '../../services';
 import {setupApplication} from './test-helper';
 
 describe('itemController', () => {
@@ -11,7 +11,7 @@ describe('itemController', () => {
   let client: Client;
   let itemRepo: ItemRepository;
   let userRepo: UserRepository;
-  let userManagementService: UserManagementService;
+  let userService: UserService;
   let adminToken: string;
   let userToken: string;
 
@@ -32,14 +32,14 @@ describe('itemController', () => {
   const defaultItem = new Item({
     name: 'Basic Shield',
     rarity: 'common',
-    image: 'https://images.unsplash.com/photo-1571380401583-72ca84994796?ixlib=rb1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60',
+    image:
+      'https://images.unsplash.com/photo-1571380401583-72ca84994796?ixlib=rb1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60',
     description: 'A basic shield',
     details:
       'elementum consectetur felis et malesuada. Vivamus semper ipsum et ligula maximus viverra. Fusce aliquet, nunc a laoreet pellentesque, leo dui vestibulum justo, a lacinia orci magna vitae magna. Nullam bibendum turpis non ex semper, quis iaculis lacus elementum. Fusce ultricies diam a neque varius, nec pulvinar ante congue.',
   });
 
   let generatedItemIndex = 66719945;
-
 
   before('setupApplication', async () => {
     try {
@@ -49,7 +49,7 @@ describe('itemController', () => {
     }
     itemRepo = await app.get('repositories.ItemRepository');
     userRepo = await app.get('repositories.UserRepository');
-    userManagementService = await app.get('services.user.service');
+    userService = await app.get('services.user.service');
 
     adminToken = await authenticateUser(await createAdmin());
     userToken = await authenticateUser(await createUser());
@@ -73,12 +73,12 @@ describe('itemController', () => {
       .set('Content-Type', 'application/json')
       .send(defaultItem)
       .expect(200);
-    expect(secondtItem.body.itemId).to.be.equal(firstItem.body.itemId + 1)
+    expect(secondtItem.body.itemId).to.be.equal(firstItem.body.itemId + 1);
   });
 
   it('Should fail to create an item with wrong params', async () => {
-    const wrongItem: Partial<Item> = _.cloneDeep(defaultItem)
-    wrongItem.name = undefined
+    const wrongItem: Partial<Item> = _.cloneDeep(defaultItem);
+    wrongItem.name = undefined;
     await client
       .post('/item')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -150,7 +150,7 @@ describe('itemController', () => {
   }
 
   async function createItem(): Promise<Item> {
-    const itemToDelete: Partial<Item> = _.cloneDeep(defaultItem)
+    const itemToDelete: Partial<Item> = _.cloneDeep(defaultItem);
     itemToDelete.itemId = generatedItemIndex++;
     const item: Item = await itemRepo.create(itemToDelete);
     return item;
@@ -159,18 +159,18 @@ describe('itemController', () => {
   async function createUser() {
     const userWithPassword = new UserWithPassword(userData);
     userWithPassword.password = userPassword;
-    return userManagementService.createUser(userWithPassword);
+    return userService.createUser(userWithPassword);
   }
 
   async function createAdmin() {
     const userWithPassword = new UserWithPassword(adminData);
     userWithPassword.password = userPassword;
-    return userManagementService.createUser(userWithPassword);
+    return userService.createUser(userWithPassword);
   }
 
   async function authenticateUser(user: User) {
     const res = await client
-      .post('/user/login')
+      .post('/user/signin')
       .send({email: user.email, password: userPassword});
     return res.body.token;
   }

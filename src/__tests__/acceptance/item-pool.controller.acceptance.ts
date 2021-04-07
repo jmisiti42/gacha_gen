@@ -2,7 +2,7 @@ import {Client} from '@loopback/testlab';
 import {GachaGenApplication} from '../..';
 import {ItemPool, Pool, User, UserWithPassword} from '../../models';
 import {ItemPoolRepository, UserRepository} from '../../repositories';
-import {UserManagementService} from '../../services';
+import {UserService} from '../../services';
 import {setupApplication} from './test-helper';
 
 describe('ItemPoolController', () => {
@@ -10,7 +10,7 @@ describe('ItemPoolController', () => {
   let client: Client;
   let itemPoolRepo: ItemPoolRepository;
   let userRepo: UserRepository;
-  let userManagementService: UserManagementService;
+  let userService: UserService;
   let adminToken: string;
   let userToken: string;
 
@@ -45,7 +45,7 @@ describe('ItemPoolController', () => {
     ({app, client} = await setupApplication());
     itemPoolRepo = await app.get('repositories.ItemPoolRepository');
     userRepo = await app.get('repositories.UserRepository');
-    userManagementService = await app.get('services.user.service');
+    userService = await app.get('services.user.service');
 
     adminToken = await authenticateUser(await createAdmin());
     userToken = await authenticateUser(await createUser());
@@ -106,18 +106,18 @@ describe('ItemPoolController', () => {
   async function createUser() {
     const userWithPassword = new UserWithPassword(userData);
     userWithPassword.password = userPassword;
-    return userManagementService.createUser(userWithPassword);
+    return userService.createUser(userWithPassword);
   }
 
   async function createAdmin() {
     const userWithPassword = new UserWithPassword(adminData);
     userWithPassword.password = userPassword;
-    return userManagementService.createUser(userWithPassword);
+    return userService.createUser(userWithPassword);
   }
 
   async function authenticateUser(user: User) {
     const res = await client
-      .post('/user/login')
+      .post('/user/signin')
       .send({email: user.email, password: userPassword});
     return res.body.token;
   }

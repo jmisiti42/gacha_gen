@@ -9,3 +9,4 @@ export * from './user-with-password.model';
 export * from './key-and-password.model';
 export * from './item-pool.model';
 export * from './pool.model';
+export * from './reset-password-init.model';

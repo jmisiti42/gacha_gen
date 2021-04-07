@@ -30,7 +30,7 @@ export class Item extends Entity {
 
   @property({
     type: 'string',
-    required : true,
+    required: true,
   })
   name: string;
 
