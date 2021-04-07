@@ -6,7 +6,7 @@ import {
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
+  Where
 } from '@loopback/repository';
 import {
   del,
@@ -17,7 +17,7 @@ import {
   post,
   put,
   requestBody,
-  response,
+  response
 } from '@loopback/rest';
 import {ItemPool} from '../models';
 import {Pool} from '../models/pool.model';
@@ -31,7 +31,7 @@ export class ItemPoolController {
     public itemPoolRepository: ItemPoolRepository,
     @repository(ItemRepository)
     public itemRepository: ItemRepository,
-  ) {}
+  ) { }
 
   @post('/pool')
   @authenticate('jwt')
@@ -73,7 +73,7 @@ export class ItemPoolController {
     })
     pool: Pool,
     @param.path.string('id') id: string,
-    @param.path.string('itemId') itemId: string,
+    @param.path.number('itemId') itemId: number,
   ): Promise<ItemPool | Error> {
     if (
       pool.maxValue < pool.minValue ||

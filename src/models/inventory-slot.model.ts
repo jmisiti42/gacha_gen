@@ -1,4 +1,4 @@
-import {Entity, model, property, belongsTo} from '@loopback/repository';
+import {belongsTo, Entity, model, property} from '@loopback/repository';
 import {Item} from './item.model';
 import {User} from './user.model';
 
@@ -16,9 +16,9 @@ export class InventorySlot extends Entity {
   userId: string;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  itemId: string;
+  itemId: number;
 
   @property({
     type: 'number',

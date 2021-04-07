@@ -38,6 +38,8 @@ describe.only('itemController', () => {
       'elementum consectetur felis et malesuada. Vivamus semper ipsum et ligula maximus viverra. Fusce aliquet, nunc a laoreet pellentesque, leo dui vestibulum justo, a lacinia orci magna vitae magna. Nullam bibendum turpis non ex semper, quis iaculis lacus elementum. Fusce ultricies diam a neque varius, nec pulvinar ante congue.',
   });
 
+  let generatedItemIndex = 66719945;
+
 
   before('setupApplication', async () => {
     try {
@@ -149,7 +151,7 @@ describe.only('itemController', () => {
 
   async function createItem(): Promise<Item> {
     const itemToDelete: Partial<Item> = _.cloneDeep(defaultItem)
-    itemToDelete.itemId = 66642069;
+    itemToDelete.itemId = generatedItemIndex++;
     const item: Item = await itemRepo.create(itemToDelete);
     return item;
   }
