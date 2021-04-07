@@ -30,7 +30,7 @@ export class Pool extends Entity {
   amount: number;
 
   @belongsTo(() => Item)
-  itemId: string;
+  itemId: number;
 
   constructor(data?: Partial<Pool>) {
     super(data);

@@ -59,7 +59,6 @@ describe.only('itemController', () => {
   });
 
   it('Should create two items  with auto itemIdcreation ', async () => {
-
     const firstItem = await client
       .post('/item')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -72,8 +71,7 @@ describe.only('itemController', () => {
       .set('Content-Type', 'application/json')
       .send(defaultItem)
       .expect(200);
-    expect(parseInt(secondtItem.body.itemId)).to.be.equal(parseInt(firstItem.body.itemId) + 1)
-
+    expect(secondtItem.body.itemId).to.be.equal(firstItem.body.itemId + 1)
   });
 
   it('Should fail to create an item with wrong params', async () => {
@@ -106,47 +104,54 @@ describe.only('itemController', () => {
   });
 
   it('Should delete an item as an admin', async () => {
-    const {id} = await itemRepo.create(defaultItem);
+    const item = await createItem();
     await client
-      .del(`/item/${id}`)
+      .del(`/item/${item.id}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .set('Content-Type', 'application/json')
-      .send(defaultItem)
+      .send(item)
       .expect(204);
   });
 
   it('Shouldn fail to delete an item as an user', async () => {
-    const {id} = await itemRepo.create(defaultItem);
+    const item = await createItem();
     await client
-      .del(`/item/${id}`)
+      .del(`/item/${item.id}`)
       .set('Authorization', `Bearer ${userToken}`)
       .set('Content-Type', 'application/json')
-      .send(defaultItem)
+      .send(item)
       .expect(403);
   });
 
   it('Should modify an item as an an admin', async () => {
-    const {id} = await itemRepo.create(defaultItem);
+    const item = await createItem();
     await client
-      .patch(`/item/${id}`)
+      .patch(`/item/${item.id}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .set('Content-Type', 'application/json')
-      .send(defaultItem)
+      .send(item)
       .expect(204);
   });
 
   it('Should fail to modify an item as an user', async () => {
-    const {id} = await itemRepo.create(defaultItem);
+    const item = await createItem();
     await client
-      .patch(`/item/${id}`)
+      .patch(`/item/${item.id}`)
       .set('Authorization', `Bearer ${userToken}`)
       .set('Content-Type', 'application/json')
-      .send(defaultItem)
+      .send(item)
       .expect(403);
   });
 
   async function clearDatabase() {
     await userRepo.deleteAll();
+  }
+
+  async function createItem(): Promise<Item> {
+    const itemToDelete: Partial<Item> = _.cloneDeep(defaultItem)
+    itemToDelete.itemId = 66642069;
+    const item: Item = await itemRepo.create(itemToDelete);
+    return item;
   }
 
   async function createUser() {

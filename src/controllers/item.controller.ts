@@ -53,7 +53,7 @@ export class ItemController {
     const lastItem = await this.itemRepository.findOne({ order: ['id DESC'] })
     if (!lastItem)
       return throwError('error during item creation', 500)
-    item.itemId = `${parseInt(lastItem.itemId) + 1}`
+    item.itemId = lastItem.itemId + 1
     return this.itemRepository.create(item);
   }
 
