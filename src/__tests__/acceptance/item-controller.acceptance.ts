@@ -6,7 +6,7 @@ import {ItemRepository, UserRepository} from '../../repositories';
 import {UserManagementService} from '../../services';
 import {setupApplication} from './test-helper';
 
-describe.only('itemController', () => {
+describe('itemController', () => {
   let app: GachaGenApplication;
   let client: Client;
   let itemRepo: ItemRepository;

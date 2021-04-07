@@ -1,39 +1,63 @@
 import {
   authenticate,
   TokenService,
-  UserService,
+  UserService
 } from '@loopback/authentication';
 import {Credentials, TokenServiceBindings} from '@loopback/authentication-jwt';
+import {authorize} from '@loopback/authorization';
 import {inject} from '@loopback/core';
 import {
   Count,
   CountSchema,
+
+
   Filter,
+
+
   FilterExcludingWhere,
+
+
+  model,
+
+
+  property,
+
+
   repository,
-  Where,
+  Where
 } from '@loopback/repository';
 import {
   del,
   get,
   getModelSchemaRef,
+  HttpErrors,
   param,
   patch,
   post,
   put,
   requestBody,
-  response,
+  response
 } from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+import _ from 'lodash';
 import {PasswordHasherBindings, UserServiceBindings} from '../keys';
-import {User} from '../models';
+import {User, UserWithPassword} from '../models';
 import {UserRepository} from '../repositories';
-import {PasswordHasher, UserManagementService} from '../services';
+import {basicAuthorization, PasswordHasher, UserManagementService, validateCredentials} from '../services';
 import {OPERATION_SECURITY_SPEC} from '../utils';
 import {
   CredentialsRequestBody,
-  UserProfileSchema,
+  UserProfileSchema
 } from './specs/user-controller.spec';
+
+@model()
+export class NewUserRequest extends User {
+  @property({
+    type: 'string',
+    required: true,
+  })
+  password: string;
+}
 
 export class UserController {
   constructor(
@@ -47,9 +71,9 @@ export class UserController {
     public userService: UserService<User, Credentials>,
     @inject(UserServiceBindings.USER_SERVICE)
     public userManagementService: UserManagementService,
-  ) {}
+  ) { }
 
-  @post('/user/login', {
+  @post('/user/signin', {
     responses: {
       '200': {
         description: 'Token',
@@ -68,7 +92,7 @@ export class UserController {
       },
     },
   })
-  async login(
+  async signin(
     @requestBody(CredentialsRequestBody) credentials: Credentials,
   ): Promise<{token: string}> {
     // ensure the user exists, and the password is correct
@@ -109,7 +133,10 @@ export class UserController {
   }
 
   @post('/api/user')
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   @response(200, {
+    security: OPERATION_SECURITY_SPEC,
     description: 'User model instance',
     content: {'application/json': {schema: getModelSchemaRef(User)}},
   })
@@ -127,6 +154,47 @@ export class UserController {
     user: Omit<User, 'id'>,
   ): Promise<User> {
     return this.userRepository.create(user);
+  }
+  @post('/user/signup', {
+    responses: {
+      '200': {
+        description: 'User',
+        content: {
+          'application/json': {
+            schema: {
+              'x-ts-type': User,
+            },
+          },
+        },
+      },
+    },
+  })
+  async signup(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(UserWithPassword, {
+            title: 'NewUser',
+          }),
+        },
+      },
+    })
+    user: UserWithPassword,
+  ): Promise<User> {
+    // ensure a valid email value and password value
+    validateCredentials(_.pick(user, ['email', 'password']));
+
+    try {
+      user.resetKey = '';
+      return await this.userManagementService.createUser(user);
+    } catch (error) {
+      // MongoError 11000 duplicate key
+      if (error.code === 11000 && error.errmsg.includes('index: uniqueEmail')) {
+        throw new HttpErrors.Conflict('Email value is already taken');
+      } else {
+        throw error;
+      }
+    }
   }
 
   @get('/api/user/count')
