@@ -49,9 +49,9 @@ export class ItemController {
     })
     item : Required<Omit <Item, 'id'| 'itemId'>> & Partial<Omit<Item, 'id'>>,
   ): Promise<Item> {
-    console.log(item)
-   // const test = await this.itemRepository.findOne({}, {sort: {itemId: -1}})
- //   console.log(test);    
+    console.log({item})
+    const test = await this.itemRepository.findOne({ order: ['itemId DESC'] })
+    console.log({test});    
 //    item.itemId ? item.itemId : item.generateItemId()
     return this.itemRepository.create(item);
   }

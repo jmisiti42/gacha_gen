@@ -60,18 +60,18 @@ describe.only('itemController', () => {
   });
 
   beforeEach(clearPools);
-  it.only('Should fail to create an item with wrong params', async () => {
+  it('Should fail to create an item with wrong params', async () => {
     const wrongItem : Partial<Item> = _.cloneDeep(defaultItem)
     wrongItem.name = undefined
-   /* await client
+    await client
       .post('/item')
       .set('Authorization', `Bearer ${adminToken}`)
       .set('Content-Type', 'application/json')
       .send(wrongItem)
-      .expect(422);*/
+      .expect(422);
   });
 
-  it('Should create an item as an admin', async () => {
+  it.only('Should create an item as an admin', async () => {
     await client
       .post('/item')
       .set('Authorization', `Bearer ${adminToken}`)
