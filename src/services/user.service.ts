@@ -1,4 +1,4 @@
-import {UserService} from '@loopback/authentication';
+import {UserService as _UserService} from '@loopback/authentication';
 import {inject} from '@loopback/context';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
@@ -12,7 +12,7 @@ import {subtractDates} from '../utils';
 import {EmailService} from './email.service';
 import {PasswordHasher} from './hash.password.bcryptjs';
 
-export class UserManagementService implements UserService<User, Credentials> {
+export class UserService implements _UserService<User, Credentials> {
   constructor(
     @repository(UserRepository)
     public userRepository: UserRepository,

@@ -29,7 +29,7 @@ import {
 } from './repositories';
 import {MySequence} from './sequence';
 import {
-  UserManagementService,
+  UserService,
   BcryptHasher,
   SecuritySpecEnhancer,
   JWTService,
@@ -96,7 +96,7 @@ export class GachaGenApplication extends BootMixin(
     this.bind(PasswordHasherBindings.PASSWORD_HASHER).toClass(BcryptHasher);
     this.bind(TokenServiceBindings.TOKEN_SERVICE).toClass(JWTService);
 
-    this.bind(UserServiceBindings.USER_SERVICE).toClass(UserManagementService);
+    this.bind(UserServiceBindings.USER_SERVICE).toClass(UserService);
     this.add(createBindingFromClass(SecuritySpecEnhancer));
 
     this.add(createBindingFromClass(ErrorHandlerMiddlewareProvider));
@@ -153,10 +153,10 @@ export class GachaGenApplication extends BootMixin(
         const userFile = path.join(usersDir, file);
         const yamlString = YAML.parse(fs.readFileSync(userFile, 'utf8'));
         const userWithPassword = new UserWithPassword(yamlString);
-        const userManagementService = await this.get<UserManagementService>(
+        const userService = await this.get<UserService>(
           UserServiceBindings.USER_SERVICE,
         );
-        await userManagementService.createUser(userWithPassword);
+        await userService.createUser(userWithPassword);
       }
     }
 

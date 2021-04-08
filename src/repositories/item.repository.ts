@@ -5,7 +5,7 @@ import {Item, ItemRelations} from '../models';
 
 export class ItemRepository extends DefaultCrudRepository<
   Item,
-  typeof Item.prototype.itemId,
+  typeof Item.prototype.id,
   ItemRelations
 > {
   constructor(@inject('datasources.mongo') dataSource: MongoDataSource) {

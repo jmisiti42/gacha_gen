@@ -1,4 +1,4 @@
 email: admin@example.com
 username: 'admin'
 password: user12345678
-roles: ['admin']
+roles: ['user', 'server', 'editor', 'admin']

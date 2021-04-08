@@ -33,14 +33,17 @@ export class ItemPoolController {
     public itemRepository: ItemRepository,
   ) {}
 
-  @post('/pool')
+  @post('/pool', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'ItemPool model instance',
+        content: {'application/json': {'x-ts-type': ItemPool}},
+      },
+    },
+  })
   @authenticate('jwt')
   @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
-  @response(200, {
-    security: OPERATION_SECURITY_SPEC,
-    description: 'ItemPool model instance',
-    content: {'application/json': {schema: getModelSchemaRef(ItemPool)}},
-  })
   async create(
     @requestBody({
       content: {
@@ -56,16 +59,19 @@ export class ItemPoolController {
     return this.itemPoolRepository.create(itemPool);
   }
 
-  @post('/pool/{id}/item/{itemId}')
-  @authenticate('jwt')
-  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
-  @response(200, {
+  @post('/pool/{id}/item/{itemId}', {
     security: OPERATION_SECURITY_SPEC,
-    description: 'ItemPool model instance',
-    content: {
-      'application/json': {schema: {'x-ts-type': getModelSchemaRef(ItemPool)}},
+    responses: {
+      '200': {
+        description: 'Add item to itemPool',
+        content: {
+          'application/json': {'x-ts-type': ItemPool},
+        },
+      },
     },
   })
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   async addItem(
     @requestBody({
       content: {
@@ -76,7 +82,7 @@ export class ItemPoolController {
     })
     pool: Pool,
     @param.path.string('id') id: string,
-    @param.path.string('itemId') itemId: string,
+    @param.path.number('itemId') itemId: number,
   ): Promise<ItemPool | Error> {
     if (
       pool.maxValue < pool.minValue ||
@@ -109,38 +115,54 @@ export class ItemPoolController {
     return itemPool;
   }
 
-  @get('/pools/count')
-  @response(200, {
-    description: 'ItemPool model count',
-    content: {'application/json': {schema: {'x-ts-type': CountSchema}}},
+  @get('/pools/count', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'ItemPool model count',
+        content: {'application/json': {'x-ts-type': CountSchema}},
+      },
+    },
   })
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
+  @response(200)
   async count(@param.where(ItemPool) where?: Where<ItemPool>): Promise<Count> {
     return this.itemPoolRepository.count(where);
   }
 
-  @get('/pools')
-  @response(200, {
-    description: 'Array of ItemPool model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(ItemPool, {includeRelations: true}),
+  @get('/pools', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'Array of ItemPool model instances',
+        content: {
+          'application/json': {
+            'x-ts-type': [ItemPool],
+          },
         },
       },
     },
   })
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   async find(
     @param.filter(ItemPool) filter?: Filter<ItemPool>,
   ): Promise<ItemPool[]> {
     return this.itemPoolRepository.find(filter);
   }
 
-  @patch('/pools')
-  @response(200, {
-    description: 'ItemPool PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
+  @patch('/pools', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'ItemPool PATCH success count',
+        content: {'application/json': {'x-ts-type': CountSchema}},
+      },
+    },
   })
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   async updateAll(
     @requestBody({
       content: {
@@ -155,15 +177,21 @@ export class ItemPoolController {
     return this.itemPoolRepository.updateAll(itemPool, where);
   }
 
-  @get('/pool/{id}')
-  @response(200, {
-    description: 'ItemPool model instance',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(ItemPool, {includeRelations: true}),
+  @get('/pool/{id}', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '200': {
+        description: 'ItemPool model instance',
+        content: {
+          'application/json': {
+            'x-ts-type': getModelSchemaRef(ItemPool, {includeRelations: true}),
+          },
+        },
       },
     },
   })
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['user'], voters: [basicAuthorization]})
   async findById(
     @param.path.string('id') id: string,
     @param.filter(ItemPool, {exclude: 'where'})
@@ -172,10 +200,16 @@ export class ItemPoolController {
     return this.itemPoolRepository.findById(id, filter);
   }
 
-  @patch('/pool/{id}')
-  @response(204, {
-    description: 'ItemPool PATCH success',
+  @patch('/pool/{id}', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '204': {
+        description: 'ItemPool PATCH success',
+      },
+    },
   })
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   async updateById(
     @param.path.string('id') id: string,
     @requestBody({
@@ -190,10 +224,16 @@ export class ItemPoolController {
     await this.itemPoolRepository.updateById(id, itemPool);
   }
 
-  @put('/pool/{id}')
-  @response(204, {
-    description: 'ItemPool PUT success',
+  @put('/pool/{id}', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '204': {
+        description: 'ItemPool PUT success',
+      },
+    },
   })
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   async replaceById(
     @param.path.string('id') id: string,
     @requestBody() itemPool: ItemPool,
@@ -201,10 +241,16 @@ export class ItemPoolController {
     await this.itemPoolRepository.replaceById(id, itemPool);
   }
 
-  @del('/pool/{id}')
-  @response(204, {
-    description: 'ItemPool DELETE success',
+  @del('/pool/{id}', {
+    security: OPERATION_SECURITY_SPEC,
+    responses: {
+      '204': {
+        description: 'ItemPool DELETE success',
+      },
+    },
   })
+  @authenticate('jwt')
+  @authorize({allowedRoles: ['admin'], voters: [basicAuthorization]})
   async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.itemPoolRepository.deleteById(id);
   }

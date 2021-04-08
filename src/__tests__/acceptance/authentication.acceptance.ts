@@ -1,4 +1,7 @@
-import {TokenService, UserService} from '@loopback/authentication';
+import {
+  TokenService,
+  UserService as UserServiceCredentials,
+} from '@loopback/authentication';
 import {TokenServiceBindings} from '@loopback/authentication-jwt';
 import {HttpErrors} from '@loopback/rest';
 import {securityId} from '@loopback/security';
@@ -9,11 +12,7 @@ import {GachaGenApplication} from '../..';
 import {PasswordHasherBindings, UserServiceBindings} from '../../keys';
 import {User, UserWithPassword} from '../../models';
 import {Credentials, UserRepository} from '../../repositories';
-import {
-  PasswordHasher,
-  UserManagementService,
-  validateCredentials,
-} from '../../services';
+import {PasswordHasher, UserService, validateCredentials} from '../../services';
 import {setupApplication} from './test-helper';
 
 describe('authentication services', function (this: Suite) {
@@ -30,9 +29,9 @@ describe('authentication services', function (this: Suite) {
 
   let user: User;
   let jwtService: TokenService;
-  let userService: UserService<User, Credentials>;
+  let userServiceCredentials: UserServiceCredentials<User, Credentials>;
   let bcryptHasher: PasswordHasher;
-  let userManagementService: UserManagementService;
+  let userService: UserService;
 
   before(setupApp);
   after(async () => {
@@ -42,7 +41,7 @@ describe('authentication services', function (this: Suite) {
   let userRepo: UserRepository;
   before(async () => {
     userRepo = await app.get('repositories.UserRepository');
-    userManagementService = await app.get('services.user.service');
+    userService = await app.get('services.user.service');
   });
 
   before(clearDatabase);
@@ -73,7 +72,9 @@ describe('authentication services', function (this: Suite) {
     const {email} = user;
     const credentials = {email, password: userPassword};
 
-    const returnedUser = await userService.verifyCredentials(credentials);
+    const returnedUser = await userServiceCredentials.verifyCredentials(
+      credentials,
+    );
 
     // create a copy of returned user without password field
     const returnedUserWithOutPassword = _.omit(returnedUser, 'password');
@@ -93,9 +94,9 @@ describe('authentication services', function (this: Suite) {
       'Invalid email or password.',
     );
 
-    await expect(userService.verifyCredentials(credentials)).to.be.rejectedWith(
-      expectedError,
-    );
+    await expect(
+      userServiceCredentials.verifyCredentials(credentials),
+    ).to.be.rejectedWith(expectedError);
   });
 
   it('user service verifyCredentials() fails with incorrect credentials', async () => {
@@ -105,9 +106,9 @@ describe('authentication services', function (this: Suite) {
       'Invalid email or password.',
     );
 
-    await expect(userService.verifyCredentials(credentials)).to.be.rejectedWith(
-      expectedError,
-    );
+    await expect(
+      userServiceCredentials.verifyCredentials(credentials),
+    ).to.be.rejectedWith(expectedError);
   });
 
   it('user service convertToUserProfile() succeeds', () => {
@@ -117,18 +118,18 @@ describe('authentication services', function (this: Suite) {
       username: user.username,
       roles: ['user'],
     };
-    const userProfile = userService.convertToUserProfile(user);
+    const userProfile = userServiceCredentials.convertToUserProfile(user);
     expect(userProfile).to.deepEqual(expectedUserProfile);
   });
 
   it('token service generateToken() succeeds', async () => {
-    const userProfile = userService.convertToUserProfile(user);
+    const userProfile = userServiceCredentials.convertToUserProfile(user);
     const token = await jwtService.generateToken(userProfile);
     expect(token).to.not.be.empty();
   });
 
   it('token service verifyToken() succeeds', async () => {
-    const userProfile = userService.convertToUserProfile(user);
+    const userProfile = userServiceCredentials.convertToUserProfile(user);
     const token = await jwtService.generateToken(userProfile);
     const userProfileFromToken = await jwtService.verifyToken(token);
 
@@ -178,7 +179,7 @@ describe('authentication services', function (this: Suite) {
     bcryptHasher = await app.get(PasswordHasherBindings.PASSWORD_HASHER);
     const userWithPassword = new UserWithPassword(userData);
     userWithPassword.password = userPassword;
-    user = await userManagementService.createUser(userWithPassword);
+    user = await userService.createUser(userWithPassword);
   }
 
   async function clearDatabase() {
@@ -190,6 +191,6 @@ describe('authentication services', function (this: Suite) {
   }
 
   async function createUserService() {
-    userService = await app.get(UserServiceBindings.USER_SERVICE);
+    userServiceCredentials = await app.get(UserServiceBindings.USER_SERVICE);
   }
 });

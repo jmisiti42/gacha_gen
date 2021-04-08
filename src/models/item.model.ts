@@ -23,13 +23,14 @@ export class Item extends Entity {
   id: string;
 
   @property({
-    type: 'string',
-    id: true,
+    type: 'number',
+    required: true,
   })
-  itemId: string;
+  itemId: number;
 
   @property({
     type: 'string',
+    required: true,
   })
   name: string;
 

@@ -2,6 +2,7 @@ import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
 
 const mongodbUrl = process.env.MONGO_URI;
+const isTest = process.env.TESTS;
 
 let config = {};
 
@@ -15,6 +16,9 @@ if (mongodbUrl) {
   };
 } else {
   console.log('No env var found for MONGO_URI, so using local config');
+  if (isTest) {
+    console.log('Using test database');
+  }
   config = {
     name: 'mongo',
     connector: 'mongodb',
@@ -23,7 +27,7 @@ if (mongodbUrl) {
     port: 27017,
     user: '',
     password: '',
-    database: 'gacha_gen',
+    database: isTest ? 'tests' : 'gacha_gen',
     useNewUrlParser: true,
     writeConcern: {j: null},
   };
