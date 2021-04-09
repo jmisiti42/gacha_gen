@@ -41,7 +41,7 @@ describe('UserController', () => {
     await app.stop();
   });
 
-  it('creates new user when user signup is invoked', async () => {
+  it('should create a new user when user signup is invoked', async () => {
     const res = await client
       .post('/user/signup')
       .send({...userData, password: userPassword})
@@ -53,7 +53,7 @@ describe('UserController', () => {
     expect(res.body).to.not.have.property('password');
   });
 
-  it('throws error for user signup with a missing email', async () => {
+  it('should throw an error for user signup with a missing email', async () => {
     const res = await client
       .post('/user/signup')
       .send({
@@ -68,7 +68,7 @@ describe('UserController', () => {
     expect(errorText.error.details[0].info.missingProperty).to.equal('email');
   });
 
-  it('throws error for user signup with an invalid email', async () => {
+  it('Should throw an error for user signup with an invalid email', async () => {
     const res = await client
       .post('/user/signup')
       .send({
@@ -81,7 +81,7 @@ describe('UserController', () => {
     expect(res.body.error.message).to.equal('invalid email');
   });
 
-  it('throws error for user signup with a missing password', async () => {
+  it('should throw a error for user signup with a missing password', async () => {
     const res = await client
       .post('/user/signup')
       .send({
@@ -98,14 +98,14 @@ describe('UserController', () => {
     );
   });
 
-  it('throws error for user signup with a string', async () => {
+  it('should throw error for user signup with a string', async () => {
     const res = await client.post('/user/signup').send('hello').expect(415);
     expect(res.body.error.message).to.equal(
       'Content-type application/x-www-form-urlencoded does not match [application/json].',
     );
   });
 
-  it('throws error for user signup with an existing email', async () => {
+  it('should throw an error for user signup with an existing email', async () => {
     await client
       .post('/user/signup')
       .send({...userData, password: userPassword})
@@ -118,13 +118,13 @@ describe('UserController', () => {
     expect(res.body.error.message).to.equal('Email value is already taken');
   });
 
-  it('protects GET /user/{id} with authorization', async () => {
+  it('should protect GET /user/{id} with authorization', async () => {
     const newUser = await createAUser();
     await client.get(`/user/${newUser.id}`).expect(401);
   });
 
   describe('forgot-password', () => {
-    it('throws error for PUT /user/forgot-password when resetting password for non logged in account', async () => {
+    it('should throw an error for PUT /user/forgot-password when resetting password for non logged in account', async () => {
       const token = await authenticateUser();
       const res = await client
         .put('/user/forgot-password')
@@ -138,7 +138,7 @@ describe('UserController', () => {
       expect(res.body.error.message).to.equal('Invalid email address');
     });
 
-    it('password reset returns an error when invalid password is used', async () => {
+    it('(password reset) sloud return an error when invalid password is used', async () => {
       const token = await authenticateUser();
 
       const res = await client
@@ -152,7 +152,7 @@ describe('UserController', () => {
       );
     });
 
-    it('returns token for a successful password reset', async () => {
+    it('should return token for a successful password reset', async () => {
       const token = await authenticateUser();
 
       const res = await client
@@ -166,7 +166,7 @@ describe('UserController', () => {
   });
 
   describe('reset-password-init', () => {
-    it('throws error for POST /user/reset-password-init with an invalid email', async () => {
+    it('should throw an error for POST /user/reset-password-init with an invalid email', async () => {
       const res = await client
         .post('/user/reset-password/init')
         .send({email: 'john'})
@@ -174,7 +174,7 @@ describe('UserController', () => {
       expect(res.body.error.message).to.equal('Invalid email address');
     });
 
-    it('throws error for POST /user/reset-password-init for non-existent account email', async () => {
+    it('should throw an error for POST /user/reset-password-init for non-existent account email', async () => {
       const res = await client
         .post('/user/reset-password/init')
         .send({email: 'john@example'})
@@ -184,7 +184,7 @@ describe('UserController', () => {
       );
     });
 
-    it('password reset throws error if email config is invalid', async () => {
+    it('(password reset) should throw an error if email config is invalid', async () => {
       const tempData = {
         email: 'john@loopback.io',
         username: 'Example',
@@ -207,7 +207,7 @@ describe('UserController', () => {
   });
 
   describe('reset-password-finish', () => {
-    it('throws error for PUT /user/reset-password-finish with an invalid key', async () => {
+    it('should throw an error for PUT /user/reset-password-finish with an invalid key', async () => {
       const res = await client
         .put('/user/reset-password/finish')
         .send(
@@ -223,7 +223,7 @@ describe('UserController', () => {
       );
     });
 
-    it('throws error for PUT /user/reset-password-finish with mismatch passwords', async () => {
+    it('should throw an error for PUT /user/reset-password-finish with mismatch passwords', async () => {
       const res = await client
         .put('/user/reset-password/finish')
         .send(
@@ -253,7 +253,7 @@ describe('UserController', () => {
       expect(token).to.not.be.empty();
     });
 
-    it('login returns an error when invalid email is used', async () => {
+    it('(login) should return an error when invalid email is used', async () => {
       await createAUser();
 
       const res = await client
@@ -264,7 +264,7 @@ describe('UserController', () => {
       expect(res.body.error.message).to.equal('Invalid email or password.');
     });
 
-    it('login returns an error when invalid password is used', async () => {
+    it('(login) should return an error when invalid password is used', async () => {
       const newUser = await createAUser();
 
       const res = await client
@@ -275,7 +275,7 @@ describe('UserController', () => {
       expect(res.body.error.message).to.equal('Invalid email or password.');
     });
 
-    it('users/me returns the current user profile when a valid JWT token is provided', async () => {
+    it('(users/me) should return the current user profile when a valid JWT token is provided', async () => {
       const newUser = await createAUser();
 
       let res = await client
@@ -296,7 +296,7 @@ describe('UserController', () => {
       expect(userProfile.roles).to.deepEqual(newUser.roles);
     });
 
-    it('users/me returns an error when a JWT token is not provided', async () => {
+    it('(users/me) should return an error when a JWT token is not provided', async () => {
       const res = await client.get('/user/me').expect(401);
 
       expect(res.body.error.message).to.equal(
@@ -304,7 +304,7 @@ describe('UserController', () => {
       );
     });
 
-    it('users/me returns an error when an invalid JWT token is provided', async () => {
+    it('(users/me) should return an error when an invalid JWT token is provided', async () => {
       const res = await client
         .get('/user/me')
         .set('Authorization', 'Bearer ' + 'xxx.yyy.zzz')
@@ -315,7 +315,7 @@ describe('UserController', () => {
       );
     });
 
-    it(`users/me returns an error when 'Bearer ' is not found in Authorization header`, async () => {
+    it(`(Users/me) should return an error when 'Bearer ' is not found in Authorization header`, async () => {
       const res = await client
         .get('/user/me')
         .set('Authorization', 'NotB3@r3r ' + 'xxx.yyy.zzz')
@@ -326,7 +326,7 @@ describe('UserController', () => {
       );
     });
 
-    it('users/me returns an error when an expired JWT token is provided', async () => {
+    it('(users/me) should returns an error when an expired JWT token is provided', async () => {
       const res = await client
         .get('/user/me')
         .set('Authorization', 'Bearer ' + expiredToken)
