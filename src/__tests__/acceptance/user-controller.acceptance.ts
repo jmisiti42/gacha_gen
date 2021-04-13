@@ -138,7 +138,7 @@ describe('UserController', () => {
       expect(res.body.error.message).to.equal('Invalid email address');
     });
 
-    it('(password reset) sloud return an error when invalid password is used', async () => {
+    it('(password reset) should return an error when invalid password is used', async () => {
       const token = await authenticateUser();
 
       const res = await client
