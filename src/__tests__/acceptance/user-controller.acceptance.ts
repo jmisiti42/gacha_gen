@@ -81,7 +81,7 @@ describe('UserController', () => {
     expect(res.body.error.message).to.equal('invalid email');
   });
 
-  it('Should throw a error for user signup with a missing password', async () => {
+  it('Should throw an error for user signup with a missing password', async () => {
     const res = await client
       .post('/user/signup')
       .send({
@@ -98,7 +98,7 @@ describe('UserController', () => {
     );
   });
 
-  it('Should throw error for user signup with a string', async () => {
+  it('Should throw an error for user signup with a string', async () => {
     const res = await client.post('/user/signup').send('hello').expect(415);
     expect(res.body.error.message).to.equal(
       'Content-type application/x-www-form-urlencoded does not match [application/json].',
@@ -152,7 +152,7 @@ describe('UserController', () => {
       );
     });
 
-    it('Should return token for a successful password reset', async () => {
+    it('Should return a token for a successful password reset', async () => {
       const token = await authenticateUser();
 
       const res = await client
